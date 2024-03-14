@@ -3,9 +3,12 @@ mod file_structure;
 mod utils;
 mod lumps;
 mod parse;
+mod dump;
 
 use std::{fs, env};
 use reader::Reader;
+
+const VERSION: &str = "v0.0.1";
 
 fn main() {
     let args: Vec<String> = env::args()
@@ -19,4 +22,6 @@ fn main() {
 
 	let mut reader: Reader = Reader::new(file);
 	let file = parse::parse_file(&mut reader);
+
+	dump::dump_file(args[1].clone(), file)
 }
