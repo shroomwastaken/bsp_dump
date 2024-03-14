@@ -1,0 +1,357 @@
+// all of the information about the lump structure was taken mostly from the wiki:
+// https://developer.valvesoftware.com/wiki/BSP_(Source)
+// and from other sources, too:
+// https://pysourcesdk.github.io/ValveBSP/datastructures.html
+
+use crate::utils::Vector3;
+
+#[derive(Debug, Clone)]
+#[allow(unused)]
+pub enum LumpType {
+	None,
+	Entities(String),
+	Planes(Vec<Plane>),
+	TexData(Vec<TexData>),
+	Vertexes(Vec<Vector3>),
+	Visibility(Vec<Vis>),
+	Nodes(Vec<Node>),
+	TexInfo(Vec<TexInfo>),
+	Faces(Vec<Face>),
+	Lighting(Vec<ColorRGBExp32>),
+	Occlusion(Occluder),
+	Leafs(Vec<Leaf>),
+	FaceIDs(Vec<FaceID>),
+	Edges(Vec<Edge>),
+	// vector of indices into Edges
+	// abs(number) is the index
+	// if number is positive, the edge is defined from 1st to 2nd vertex
+	// if number is negative, the edge is defined from 2nd to 1st vertex
+	SurfEdges(Vec<i32>),
+	Models(Vec<Model>),
+	WorldLights,
+	LeafFaces,
+	LeafBrushes,
+	Brushes(Vec<Brush>),
+	BrushSides(Vec<BrushSide>),
+	Areas,
+	AreaPortals,
+	Portals,
+	Unused0,
+	PropCollision,
+	Clusters,
+	Unused1,
+	PropHulls,
+	PortalVerts,
+	Unused2,
+	PropHullVerts,
+	ClusterPortals,
+	Unused3,
+	PropTrips,
+	DispInfo(Vec<DispInfo>),
+	OriginalFaces,
+	PhyDisp,
+	PhysCollide(Vec<PhysModel>),
+	VertNormals,
+	VertNormalIndices,
+	DispLightmapAlphas,
+	DispVerts(Vec<DispVert>),
+	DispLightmapSamplePositions,
+	// lump count, lump data
+	GameLump(i32, Vec<GameLumpData>),
+	LeafWaterData,
+	Primitives,
+	PrimVerts,
+	PrimIndices,
+	// this is literally just a zip archive of files lmao
+	PakFile,
+	ClipPortalVerts,
+	Cubemaps(Vec<CubemapSample>),
+	TexDataStringData,
+	TexDataStringTable,
+	Overlays(Vec<Overlay>),
+	LeafMinDistToWater,
+	FaceMacroTextureInfo,
+	// TODO: these are flags, define flags
+	DispTris(Vec<u16>),
+	PhysCollideSurface,
+	PropBlob,
+	WaterOverlays,
+	LightMapPages,
+	LeafAmbientIndexHDR(Vec<LeafAmbientIndex>),
+	LightmapPageInfos,
+	LeafAmbientIndex(Vec<LeafAmbientIndex>),
+	LightingHDR,
+	WorldLightsHDR,
+	LeafAmbientLightingHDR(Vec<LeafAmbientLighting>),
+	LeafAmbientLighting(Vec<LeafAmbientLighting>),
+	XZipPakFile,
+	FacesHDR,
+	MapFlags,
+	OverlayFades,
+	OverlaySystemLevels,
+	PhysLevel,
+	DispMultibend,
+}
+
+
+#[derive(Debug, Clone, Copy)]
+pub struct Edge {
+	// pair of vertex indices,
+	// a straight line between two vertices is an edge
+	pub pair: [u16; 2]
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Plane {
+	pub normal: Vector3, // normal vector
+	pub dist: f32, // distance from origin
+	pub r#type: i32, // plane axis identifier
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Face {
+	pub planenum: u16, // the plane number
+	pub side: u8, // faces opposite to the nodes plane direction
+	pub on_node: u8, // 1 if on node, 0 if in leaf
+	pub first_edge: u32, // index into surfedges,
+	pub num_edges: i16, // number of surfedges
+	pub tex_info: i16, // texture info
+	pub disp_info: i16, // displacement info
+	pub surface_fog_volume_id: i16, // not even the wiki knows what this is
+	pub styles: [u8; 4], // switchable lighting info
+	pub light_offset: i32, // offset into lightmap lump
+	pub area: f32, // face area in units squared
+	pub lightmap_texture_mins: [i32; 2], // both of these are "in luxels"
+	pub lightmap_texture_size: [i32; 2], // texture lighting info
+	pub orig_face: i32, // original face this was split from
+	pub num_prims: u16, // primitives
+	pub first_prim_id: u16,
+	pub smoothing_groups: u32, // lightmap smoothing group
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Node {
+	pub planenum: i32, // index into plane array
+
+	// if positive these are node indices,
+	// if negative, the value (-1-child) is an index into the leaf array
+	// for example value -100 would be leaf 99
+	pub children: [i32; 2],
+
+	pub mins: [i16; 3], // these are rough coordinates of
+	pub maxs: [i16; 3], // the bounding box this node has
+
+	pub first_face: u16, // indices into face array which show
+	pub numfaces: u16,   // which faces are contained in this node, 0 if none
+	pub area: i16, // map area of this node
+	pub padding: i16 // we dont need this
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Leaf {
+	pub contents: i32, // flags, same as in brush lump
+	pub cluster: i16,
+	pub area_flags: i16, // bitfield, area takes 9 bits, flags takes 7
+
+	pub mins: [i16; 3], // these are rough coordinates of
+	pub maxs: [i16; 3], // the bounding box this leaf has
+
+	pub first_leaf_face: u16, // these are indices into leaffaces array
+	pub num_leaf_faces: u16,
+
+	pub first_leaf_brushes: u16, // these are indices into leafbrushes array
+	pub num_leaf_brushes: u16,
+
+	pub in_water: i16, // -1 if not in water
+
+	pub ambient_lighting: Option<CompressedLightCube>, // only in lump version 0
+
+	pub padding: i16,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct FaceID {
+	pub id: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TexInfo {
+	pub texture_vecs: [[f32; 4]; 2],
+	pub lightmap_vecs: [[f32; 4]; 2],
+	pub flags: i32,
+	pub texdata: i32, // index into texdata array
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct TexData {
+	pub reflectivity: Vector3,
+	pub name_string_table_id: i32, // index into TexdataStringTable array
+	pub width: i32,
+	pub height: i32,
+	pub view_width: i32,
+	pub view_height: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Model {
+	pub mins: Vector3, // bounding box
+	pub maxs: Vector3,
+
+	pub origin: Vector3,
+
+	pub head_node: i32, // index into node array
+
+	pub first_face: i32, // indices into face array
+	pub num_faces: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct WorldLight {
+
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Brush {
+	pub first_side: i32, // index into brushside array
+	pub num_sides: i32, // firstside and the next numsides make up all the sides in the brush
+	pub contents: i32, // TODO: define the fucking flags
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct BrushSide {
+	pub plane_num: u16, // index into planes array
+	pub texinfo: i16, // index into texinfo array
+	pub dispinfo: i16, // index into dispinfo array
+
+	// why is this an i16 lmao
+	pub bevel: i16, // 1 if side is a bevel plane
+}
+
+#[derive(Debug, Clone)]
+pub struct Vis {
+	pub num_clusters: i32,
+
+	// byte offsets into pvs and pas arrays from the start of this lump for every cluster
+	// this is of length num_clusters but i can't define it like that :(
+	// so ill have to use a vec
+	pub byte_offsets: Vec<[i32; 2]>,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct GameLumpData {
+	pub id: i32,
+	pub flags: u16,
+	pub version: u16,
+
+	// offset from beginning of file
+	// (except for console portal 2, there its from beginning of this lump)
+	pub file_offset: i32,
+
+	pub file_length: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DispInfo {
+	pub start_position: Vector3,
+	pub disp_vert_start: i32,
+	pub disp_tri_start: i32,
+	pub power: i32,
+	pub min_tess: i32,
+	pub smoothing_angle: f32,
+	pub contents: i32,
+	pub map_face: u16,
+	pub lightmap_alpha_start: i32,
+	pub lightmap_sample_position_start: i32,
+	// idk what these types are
+	// edge_neighbors: CDispNeighbor,
+	// corner_neighbors: CDispCornerNeighbors,
+	pub allowed_verts: [u32; 10],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DispVert {
+	pub vec: Vector3, // normalized vector of the offset of each displacement vertex from its original (flat) position
+	pub dist: f32, // distance the offset has taken place
+	pub alpha: f32, // alpha-blending of the texture at that vertex
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CubemapSample {
+	pub origin:[i32; 3],
+	pub size: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Overlay {
+	pub id: i32,
+	pub texinfo: i16,
+	pub face_count_and_render_order: u16,
+	pub faces: [i32; 64],
+
+	// ???
+	pub u: [f32; 2],
+	pub v: [f32; 2],
+	pub uv_points: [Vector3; 4],
+
+	pub origin: Vector3,
+	pub basis_normal: Vector3,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct ColorRGBExp32 {
+	pub r: u8, pub g: u8, pub b: u8,
+	pub exponent: i8,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct CompressedLightCube {
+	pub color: [ColorRGBExp32; 6],
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct LeafAmbientLighting {
+	pub cube: CompressedLightCube,
+	pub x: u8, pub y: u8, pub z: u8,
+	pub padding: u8
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct LeafAmbientIndex {
+	pub ambient_sample_count: u16,
+	pub first_ambient_sample: u16,
+}
+
+#[derive(Debug, Clone)]
+pub struct Occluder {
+	pub count: i32,
+	pub data: Vec<OccluderData>, // of length count
+	pub poly_data_count: i32,
+	pub poly_data: Vec<OccluderPolyData>, // of length poly_data_count
+	pub vertex_index_count: i32,
+	pub vertex_indices: Vec<i32>, // of length vertex_index_count
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct OccluderData {
+	pub flags: i32,
+	pub first_poly: i32,
+	pub poly_count: i32,
+	pub mins: Vector3,
+	pub maxs: Vector3,
+	pub area: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct OccluderPolyData {
+	pub first_vertex_index: i32,
+	pub vertex_count: i32,
+	pub plane_num: i32,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PhysModel {
+	pub model_index: i32,
+	pub data_size: i32, // size of collision data section
+	pub keydata_size: i32, // size of text section
+	pub solid_count: i32, // number of collision data sections
+}
