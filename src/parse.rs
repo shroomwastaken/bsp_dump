@@ -52,7 +52,6 @@ pub fn parse_data_lumps(
 	let mut info: &LumpInfo = &lump_info[current_index];
 	
 	//      ====LUMP_ENTITIES====
-	// TODO: structure entities data properly
 	reader.index = info.file_offset as usize;
 	let ent_string: String = reader.read_string();
 	lump_data.push(LumpType::Entities(parse_entity_string(ent_string)));
