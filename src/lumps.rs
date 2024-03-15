@@ -3,13 +3,14 @@
 // and from other sources, too:
 // https://pysourcesdk.github.io/ValveBSP/datastructures.html
 
+use std::collections::HashMap;
 use crate::utils::Vector3;
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum LumpType {
 	None,
-	Entities(String),
+	Entities(Vec<HashMap<String, String>>),
 	Planes(Vec<Plane>),
 	TexData(Vec<TexData>),
 	Vertexes(Vec<Vector3>),
@@ -33,8 +34,8 @@ pub enum LumpType {
 	LeafBrushes,
 	Brushes(Vec<Brush>),
 	BrushSides(Vec<BrushSide>),
-	Areas,
-	AreaPortals,
+	Areas(Vec<Area>),
+	AreaPortals(Vec<AreaPortal>),
 	Portals,
 	Unused0,
 	PropCollision,
@@ -110,7 +111,7 @@ pub struct Plane {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Face {
-	pub planenum: u16, // the plane number
+	pub plane_num: u16, // the plane number
 	pub side: u8, // faces opposite to the nodes plane direction
 	pub on_node: u8, // 1 if on node, 0 if in leaf
 	pub first_edge: u32, // index into surfedges,
@@ -131,7 +132,7 @@ pub struct Face {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Node {
-	pub planenum: i32, // index into plane array
+	pub plane_num: i32, // index into plane array
 
 	// if positive these are node indices,
 	// if negative, the value (-1-child) is an index into the leaf array
@@ -225,6 +226,25 @@ pub struct BrushSide {
 
 	// why is this an i16 lmao
 	pub bevel: i16, // 1 if side is a bevel plane
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Area {
+	pub num_area_portals: i32, // first_area_portal + num_area_portals portals make up the area (?)
+	pub first_area_portal: i32, // index into areaportals array (?)
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct AreaPortal {
+	// Entities have a key called portalnumber (and in vbsp a variable
+	// called areaportalnum) which is used to bind them
+	// to the area portals by comparing with this value.
+	pub portal_key: u16,
+
+	pub other_area: u16, // the area this portal looks into
+	pub first_clip_portal_vert: u16, // portal geometry
+	pub clip_portal_verts: u16,
+	pub plane_num: i32,
 }
 
 #[derive(Debug, Clone)]
