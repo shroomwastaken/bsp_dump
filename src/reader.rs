@@ -26,7 +26,7 @@ impl Reader {
 		&mut self
 	) -> String {
 		let next_null: usize = find_next_null_byte(&self.bytes[self.index..]);
-		String::from_utf8(self.read_bytes(next_null + 1)).unwrap()
+		String::from_utf8(self.read_bytes(next_null)).unwrap()
 	}
 
 	pub fn read_int(
