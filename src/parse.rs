@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use crate::{
 	file_structure::{BSPFile, Header, LumpInfo},
 	lumps::{self, LumpType},
@@ -6,7 +7,7 @@ use crate::{
 };
 
 pub fn parse_file(
-	reader: &mut Reader
+	reader: &mut Reader,
 ) -> BSPFile {
 	let mut file: BSPFile = BSPFile::new();
 	parse_header(reader, &mut file.header);
@@ -15,7 +16,8 @@ pub fn parse_file(
 }
 
 pub fn parse_header(
-	reader: &mut Reader, header: &mut Header
+	reader: &mut Reader,
+	header: &mut Header,
 ) {
 	header.ident = reader.read_int();
 
@@ -42,7 +44,9 @@ pub fn parse_header(
 }
 
 pub fn parse_data_lumps(
-	reader: &mut Reader, lump_info: &[LumpInfo; 64], lump_data: &mut Vec<LumpType>
+	reader: &mut Reader,
+	lump_info: &[LumpInfo; 64],
+	lump_data: &mut Vec<LumpType>,
 ) {
 	let mut current_index: usize = 0;
 	let mut info: &LumpInfo = &lump_info[current_index];
@@ -50,7 +54,8 @@ pub fn parse_data_lumps(
 	//      ====LUMP_ENTITIES====
 	// TODO: structure entities data properly
 	reader.index = info.file_offset as usize;
-	lump_data.push(LumpType::Entities(reader.read_string()));
+	let ent_string: String = reader.read_string();
+	lump_data.push(LumpType::Entities(parse_entity_string(ent_string)));
 	println!("parsed entities lump! ({current_index})");
 	
 	//      ====LUMP_PLANES====
@@ -105,9 +110,20 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	println!("skipping visibility lump! ({current_index})");
-	reader.skip(info.length as usize);
-	lump_data.push(LumpType::None);
+	let mut viss: Vec<lumps::Vis> = vec![];
+	let num_clusters: i32 = reader.read_int();
+	let mut byte_offsets: Vec<[i32; 2]> = vec![];
+	for _ in 0..num_clusters {
+		byte_offsets.push(
+			[reader.read_int(), reader.read_int()]
+		);
+	}
+	viss.push(lumps::Vis {
+		num_clusters,
+		byte_offsets,
+	});
+	println!("parsed visibility lump! ({current_index})");
+	lump_data.push(LumpType::Visibility(viss));
 	
 	//      ====LUMP_NODES====
 	current_index += 1;
@@ -117,7 +133,7 @@ pub fn parse_data_lumps(
 	let mut nodes: Vec<lumps::Node> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		nodes.push(lumps::Node {
-			planenum: reader.read_int(),
+			plane_num: reader.read_int(),
 			children: [reader.read_int(), reader.read_int()],
 			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
 			maxs: [reader.read_short(), reader.read_short(), reader.read_short()],
@@ -173,7 +189,7 @@ pub fn parse_data_lumps(
 	let mut faces: Vec<lumps::Face> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		faces.push(lumps::Face {
-			planenum: reader.read_ushort(),
+			plane_num: reader.read_ushort(),
 			side: reader.read_byte(),
 			on_node: reader.read_byte(),
 			first_edge: reader.read_uint(),
@@ -337,11 +353,101 @@ pub fn parse_data_lumps(
 	println!("parsed models lump! ({current_index})");
 	lump_data.push(LumpType::Models(models));
 
+	// TODO: figure out the structure
 	//      ====LUMP_WORLDLIGHTS====
-	// current_index += 1;
-	// info = &lump_info[current_index];
-	// reader.index = info.file_offset as usize;
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	
+	reader.skip(info.length as usize);
+	lump_data.push(LumpType::None);
+	println!("skipped worldlights lump! ({current_index})");
+	
+	// TODO: figure out the structure
+	//      ====LUMP_LEAFFACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	
+	reader.skip(info.length as usize);
+	lump_data.push(LumpType::None);
+	println!("skipped leaffaces lump! ({current_index})");
+	
+	// TODO: figure out the structure
+	//      ====LUMP_LEAFBRUSHES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	
+	reader.skip(info.length as usize);
+	lump_data.push(LumpType::None);
+	println!("skipped leafbrushes lump! ({current_index})");
+	
+	//      ====LUMP_BRUSHES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
 
+	let mut brushes: Vec<lumps::Brush> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		brushes.push(lumps::Brush {
+			first_side: reader.read_int(),
+			num_sides: reader.read_int(), 
+			contents: reader.read_int(),
+		});
+	}
+	println!("parsed brushes lump! ({current_index})");
+	lump_data.push(LumpType::Brushes(brushes));
+
+	//      ====LUMP_BRUSHSIDES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut brushsides: Vec<lumps::BrushSide> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		brushsides.push(lumps::BrushSide {
+			plane_num: reader.read_ushort(),
+			texinfo: reader.read_short(),
+			dispinfo: reader.read_short(),
+			bevel: reader.read_short(),
+		});
+	}
+	println!("parsed brushsides lump! ({current_index})");
+	lump_data.push(LumpType::BrushSides(brushsides));
+
+	//      ====LUMP_AREAS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut areas: Vec<lumps::Area> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		areas.push(lumps::Area {
+			num_area_portals: reader.read_int(),
+			first_area_portal: reader.read_int(),
+		});
+	}
+	println!("parsed areas lump! ({current_index})");
+	lump_data.push(LumpType::Areas(areas));
+
+	//      ====LUMP_AREAPORTALS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut areaportals: Vec<lumps::AreaPortal> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		areaportals.push(lumps::AreaPortal {
+			portal_key: reader.read_ushort(),
+			other_area: reader.read_ushort(),
+			first_clip_portal_vert: reader.read_ushort(),
+			clip_portal_verts: reader.read_ushort(),
+			plane_num: reader.read_int(),
+		});
+	}
+	println!("parsed areaportals lump! ({current_index})");
+	lump_data.push(LumpType::AreaPortals(areaportals));
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
@@ -349,4 +455,42 @@ pub fn parse_data_lumps(
 		lump_data.push(LumpType::None);
 		println!("skipped lump with index {}!", i);
 	}
+}
+
+// very very bad string parsing code
+// it works so its fine
+pub fn parse_entity_string(
+	ent_string: String,
+) -> Vec<HashMap<String, String>> {
+	let mut entities: Vec<HashMap<String, String>> = vec![];
+	let mut clean_strings: Vec<String> = vec![];
+
+	for s in ent_string.split("}\n") {
+		clean_strings.push(s.replace("{", ""));
+	}
+
+	let mut split_attrs: Vec<Vec<String>> = vec![];
+	for s in clean_strings {
+		split_attrs.push(
+			s.split("\n")
+			.map(|s| { s.to_owned() })
+			.collect()
+		);
+	}
+
+	for string in split_attrs {
+		if string == vec![""] { continue; }
+		let mut ent: HashMap<String, String> = HashMap::new();
+		for attrs in string {
+			if attrs == "" { continue; }
+			let splitted: Vec<String> = attrs.split(" ")
+			.map(|s| { s.trim_matches('\"').to_owned() })
+			.collect();
+
+			ent.insert(splitted[0].clone(), splitted[1].clone());
+		}
+		entities.push(ent);
+	}
+
+	entities
 }
