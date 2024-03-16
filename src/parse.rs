@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::time::Instant;
 use crate::{
 	file_structure::{BSPFile, Header, LumpInfo},
 	lumps::{self, LumpType},
@@ -10,8 +10,10 @@ pub fn parse_file(
 	reader: &mut Reader,
 ) -> BSPFile {
 	let mut file: BSPFile = BSPFile::new();
+	let start: Instant = Instant::now();
 	parse_header(reader, &mut file.header);
 	parse_data_lumps(reader, &file.header.lumps, &mut file.lump_data);
+	println!("\nparsed file in {:?}!\n", Instant::now().duration_since(start));
 	file
 }
 
@@ -109,20 +111,17 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut viss: Vec<lumps::Vis> = vec![];
-	let num_clusters: i32 = reader.read_int();
-	let mut byte_offsets: Vec<[i32; 2]> = vec![];
-	for _ in 0..num_clusters {
-		byte_offsets.push(
+	let mut vis: lumps::Vis = lumps::Vis {
+		num_clusters: reader.read_int(),
+		byte_offsets: vec![],
+	};
+	for _ in 0..vis.num_clusters {
+		vis.byte_offsets.push(
 			[reader.read_int(), reader.read_int()]
 		);
 	}
-	viss.push(lumps::Vis {
-		num_clusters,
-		byte_offsets,
-	});
 	println!("parsed visibility lump! ({current_index})");
-	lump_data.push(LumpType::Visibility(viss));
+	lump_data.push(LumpType::Visibility(vis));
 	
 	//      ====LUMP_NODES====
 	current_index += 1;
@@ -217,12 +216,7 @@ pub fn parse_data_lumps(
 
 	let mut lightings: Vec<lumps::ColorRGBExp32> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		lightings.push(lumps::ColorRGBExp32 {
-			r: reader.read_byte(),
-			g: reader.read_byte(),
-			b: reader.read_byte(),
-			exponent: reader.read_signed_byte(),
-		});
+		lightings.push(reader.read_colorrgbexp32());
 	}
 	println!("parsed lighting lump! ({current_index})");
 	lump_data.push(LumpType::Lighting(lightings));
@@ -460,8 +454,8 @@ pub fn parse_data_lumps(
 // it works so its fine
 pub fn parse_entity_string(
 	ent_string: String,
-) -> Vec<HashMap<String, String>> {
-	let mut entities: Vec<HashMap<String, String>> = vec![];
+) -> Vec<Vec<(String, String)>> {
+	let mut entities: Vec<Vec<(String, String)>> = vec![];
 	let mut clean_strings: Vec<String> = vec![];
 
 	for s in ent_string.split("}\n") {
@@ -479,14 +473,14 @@ pub fn parse_entity_string(
 
 	for string in split_attrs {
 		if string == vec![""] { continue; }
-		let mut ent: HashMap<String, String> = HashMap::new();
+		let mut ent: Vec<(String, String)> = vec![];
 		for attrs in string {
 			if attrs == "" { continue; }
 			let splitted: Vec<String> = attrs.split(" ")
 			.map(|s| { s.trim_matches('\"').to_owned() })
 			.collect();
 
-			ent.insert(splitted[0].clone(), splitted[1].clone());
+			ent.push((splitted[0].clone(), splitted[1].clone()));
 		}
 		entities.push(ent);
 	}
