@@ -3,18 +3,17 @@
 // and from other sources, too:
 // https://pysourcesdk.github.io/ValveBSP/datastructures.html
 
-use std::collections::HashMap;
 use crate::utils::Vector3;
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
 pub enum LumpType {
 	None,
-	Entities(Vec<HashMap<String, String>>),
+	Entities(Vec<Vec<(String, String)>>),
 	Planes(Vec<Plane>),
 	TexData(Vec<TexData>),
 	Vertexes(Vec<Vector3>),
-	Visibility(Vec<Vis>),
+	Visibility(Vis),
 	Nodes(Vec<Node>),
 	TexInfo(Vec<TexInfo>),
 	Faces(Vec<Face>),
