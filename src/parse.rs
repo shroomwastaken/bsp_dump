@@ -442,6 +442,77 @@ pub fn parse_data_lumps(
 	println!("parsed areaportals lump! ({current_index})");
 	lump_data.push(LumpType::AreaPortals(areaportals));
 
+	// TODO: the next four lumps are unsused in source 2007/2009
+	// i need to detect source version somehow but for now im just
+	// trying to parse portal bsp so ill just skip these 4
+
+	//      ====LUMP_UNUSED22/LUMP_UNUSED23/LUMP_UNUSED24/LUMP_UNUSED25====
+	lump_data.push(LumpType::Unused22);
+	lump_data.push(LumpType::Unused23);
+	lump_data.push(LumpType::Unused24);
+	lump_data.push(LumpType::Unused25);
+	current_index += 4;
+	println!("skipped lumps 22-25, they are unused");
+
+	//      ====LUMP_DISPINFO====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	let mut dispinfos: Vec<lumps::DispInfo> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		dispinfos.push(lumps::DispInfo {
+			start_position: reader.read_vector3(),
+			disp_vert_start: reader.read_int(),
+			disp_tri_start: reader.read_int(),
+			power: reader.read_int(),
+			min_tess: reader.read_int(),
+			smoothing_angle: reader.read_float(),
+			contents: reader.read_int(),
+			map_face: reader.read_ushort(),
+			lightmap_alpha_start: reader.read_int(),
+			lightmap_sample_position_start: reader.read_int(),
+			allowed_verts: [
+				reader.read_uint(), reader.read_uint(), reader.read_uint(),
+				reader.read_uint(), reader.read_uint(), reader.read_uint(),
+				reader.read_uint(), reader.read_uint(), reader.read_uint(),
+				reader.read_uint(),
+			],
+		});
+	}
+	println!("parsed dispinfo lump! ({current_index})");
+	lump_data.push(LumpType::DispInfo(dispinfos));
+
+	//      ====LUMP_ORIGINALFACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	// literally the same exact structure as the faces lump
+	let mut orig_faces: Vec<lumps::Face> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		orig_faces.push(lumps::Face {
+			plane_num: reader.read_ushort(),
+			side: reader.read_byte(),
+			on_node: reader.read_byte(),
+			first_edge: reader.read_uint(),
+			num_edges: reader.read_short(),
+			tex_info: reader.read_short(),
+			disp_info: reader.read_short(),
+			surface_fog_volume_id: reader.read_short(),
+			styles: reader.read_int().to_le_bytes(),
+			light_offset: reader.read_int(),
+			area: reader.read_float(),
+			lightmap_texture_mins: [reader.read_int(), reader.read_int()],
+			lightmap_texture_size: [reader.read_int(), reader.read_int()],
+			orig_face: reader.read_int(),
+			num_prims: reader.read_ushort(),
+			first_prim_id: reader.read_ushort(),
+			smoothing_groups: reader.read_uint(),
+		});
+	}
+	println!("parsed faces lump! ({current_index})");
+	lump_data.push(LumpType::OriginalFaces(orig_faces));
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		reader.skip(lump_info[i].length as usize);
