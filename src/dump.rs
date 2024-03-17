@@ -206,8 +206,8 @@ pub fn dump_file(
 				face.disp_info, face.surface_fog_volume_id,
 			));
 			to_write.push_str(&format!(
-				"\t\tstyles: {:?}\n\t\tlight_offset: {}\n\t\tarea: {}\n",
-				face.styles, face.light_offset, face.area,
+				"\t\tstyles: {:?}\n\t\tlight_offset: {} (light{})\n\t\tarea: {}\n",
+				face.styles, face.light_offset, face.light_offset / 4, face.area,
 			));
 			to_write.push_str(&format!(
 				"\t\tlightmap_texture_mins: ({}, {})\n\t\tlightmap_texture_size: ({}, {})\n",
@@ -482,8 +482,8 @@ pub fn dump_file(
 				face.disp_info, face.surface_fog_volume_id,
 			));
 			to_write.push_str(&format!(
-				"\t\tstyles: {:?}\n\t\tlight_offset: {}\n\t\tarea: {}\n",
-				face.styles, face.light_offset, face.area,
+				"\t\tstyles: {:?}\n\t\tlight_offset: {} (light{})\n\t\tarea: {}\n",
+				face.styles, face.light_offset, face.light_offset / 4, face.area,
 			));
 			to_write.push_str(&format!(
 				"\t\tlightmap_texture_mins: ({}, {})\n\t\tlightmap_texture_size: ({}, {})\n",
