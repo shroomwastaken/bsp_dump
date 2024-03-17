@@ -1,4 +1,9 @@
-use crate::utils::Vector3;
+use crate::utils::{
+	Vector3,
+	CDispCornerNeighbors,
+	CDispSubNeighbor,
+	CDispNeighbor,
+};
 use crate::lumps;
 
 pub struct Reader {
@@ -130,6 +135,42 @@ impl Reader {
 				self.read_colorrgbexp32(), self.read_colorrgbexp32(),
 				self.read_colorrgbexp32(), self.read_colorrgbexp32(),
 			]
+		}
+	}
+
+	pub fn read_cdispsubneighbor(
+		&mut self,
+	) -> CDispSubNeighbor {
+		CDispSubNeighbor {
+			neighbor: self.read_ushort(),
+			neighbor_orientation: self.read_byte(),
+			span: self.read_byte(),
+			neighbor_span: self.read_byte(),
+			padding: self.read_byte(),
+		}
+	}
+
+	pub fn read_cdispneighbor(
+		&mut self,
+	) -> CDispNeighbor {
+		CDispNeighbor {
+			sub_neighbors: [
+				self.read_cdispsubneighbor(),
+				self.read_cdispsubneighbor(),
+			],
+		}
+	}
+
+	pub fn read_cdispcornerneighbor(
+		&mut self,
+	) -> CDispCornerNeighbors {
+		CDispCornerNeighbors {
+			neighbors: [
+				self.read_ushort(), self.read_ushort(),
+				self.read_ushort(), self.read_ushort(),
+			],
+			num_neighbors: self.read_byte(),
+			padding: self.read_byte(),
 		}
 	}
 }

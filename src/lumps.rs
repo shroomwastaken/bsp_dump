@@ -3,7 +3,11 @@
 // and from other sources, too:
 // https://pysourcesdk.github.io/ValveBSP/datastructures.html
 
-use crate::utils::Vector3;
+use crate::utils::{
+	Vector3,
+	CDispCornerNeighbors,
+	CDispNeighbor,
+};
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
@@ -281,9 +285,8 @@ pub struct DispInfo {
 	pub map_face: u16,
 	pub lightmap_alpha_start: i32,
 	pub lightmap_sample_position_start: i32,
-	// idk what these types are
-	// edge_neighbors: CDispNeighbor,
-	// corner_neighbors: CDispCornerNeighbors,
+	pub edge_neighbors: [CDispNeighbor; 4],
+	pub corner_neighbors: [CDispCornerNeighbors; 4],
 	pub allowed_verts: [u32; 10],
 }
 

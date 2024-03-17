@@ -451,9 +451,46 @@ pub fn dump_file(
 				dispinfo.contents, dispinfo.map_face, dispinfo.lightmap_alpha_start,
 			));
 			to_write.push_str(&format!(
-				"\t\tlightmap_sample_position_start: {}\n\t\tallowed_verts: {:?}\n",
-				dispinfo.lightmap_sample_position_start, dispinfo.allowed_verts,
+				"\t\tlightmap_sample_position_start: {}\n\t\tedge_neighbors:\n",
+				dispinfo.lightmap_sample_position_start,
 			));
+
+			let mut neighbor_counter: u8 = 0;
+			for neighbor in dispinfo.edge_neighbors {
+				to_write.push_str(&format!("\t\t\t[{neighbor_counter}]\n"));
+				to_write.push_str(&format!("\t\t\t\tsub_neighbors:\n"));
+				let mut subneighbor_counter: u8 = 0;
+				for sub_neighbor in neighbor.sub_neighbors {
+					to_write.push_str(&format!("\t\t\t\t\t[{subneighbor_counter}]\n"));
+					to_write.push_str(&format!(
+						"\t\t\t\t\t\tneighbor: {}\n\t\t\t\t\t\torientation: {}\n\t\t\t\t\t\tspan: {}\n",
+						sub_neighbor.neighbor, sub_neighbor.neighbor_orientation,
+						sub_neighbor.span,
+					));
+					to_write.push_str(&format!(
+						"\t\t\t\t\t\tneighbor_span: {}\n\t\t\t\t\t\tpadding: {}\n",
+						sub_neighbor.neighbor_span, sub_neighbor.padding,
+					));
+					subneighbor_counter += 1;
+				}
+				neighbor_counter += 1;
+			}
+
+			to_write.push_str("\t\tcorner_neighbors:\n");
+			neighbor_counter = 0;
+			for neighbor in dispinfo.corner_neighbors {
+				to_write.push_str(&format!("\t\t\t[{neighbor_counter}]\n"));
+				to_write.push_str(&format!(
+					"\t\t\t\tneighbors: {:?}\n\t\t\t\tnum_neighbors: {}\n\t\t\t\tpadding: {}\n",
+					neighbor.neighbors, neighbor.num_neighbors, neighbor.padding,
+				));
+			}
+
+			to_write.push_str(&format!(
+				"\t\tallowed_verts: {:?}\n",
+				dispinfo.allowed_verts
+			));
+
 			counter += 1;
 		}
 		// apparently this one can just be empty for some reason

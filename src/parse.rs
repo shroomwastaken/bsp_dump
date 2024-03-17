@@ -471,6 +471,14 @@ pub fn parse_data_lumps(
 			map_face: reader.read_ushort(),
 			lightmap_alpha_start: reader.read_int(),
 			lightmap_sample_position_start: reader.read_int(),
+			edge_neighbors: [
+				reader.read_cdispneighbor(), reader.read_cdispneighbor(),
+				reader.read_cdispneighbor(), reader.read_cdispneighbor(),
+			],
+			corner_neighbors: [
+				reader.read_cdispcornerneighbor(), reader.read_cdispcornerneighbor(),
+				reader.read_cdispcornerneighbor(), reader.read_cdispcornerneighbor(),
+			],
 			allowed_verts: [
 				reader.read_uint(), reader.read_uint(), reader.read_uint(),
 				reader.read_uint(), reader.read_uint(), reader.read_uint(),
