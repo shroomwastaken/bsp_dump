@@ -4,6 +4,7 @@ mod utils;
 mod lumps;
 mod parse;
 mod dump;
+mod specific;
 
 use std::{fs, env};
 use reader::Reader;

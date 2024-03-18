@@ -1,9 +1,5 @@
-use crate::utils::{
-	Vector3,
-	CDispCornerNeighbors,
-	CDispSubNeighbor,
-	CDispNeighbor,
-};
+use crate::utils::Vector3;
+use crate::specific::cdisp;
 use crate::lumps;
 
 pub struct Reader {
@@ -32,7 +28,7 @@ impl Reader {
 		&mut self
 	) -> String {
 		let next_null: usize = find_next_null_byte(&self.bytes[self.index..]);
-		String::from_utf8(self.read_bytes(next_null)).unwrap()
+		String::from_utf8(self.read_bytes(next_null + 1)).unwrap()
 	}
 
 	pub fn read_int(
@@ -140,8 +136,8 @@ impl Reader {
 
 	pub fn read_cdispsubneighbor(
 		&mut self,
-	) -> CDispSubNeighbor {
-		CDispSubNeighbor {
+	) -> cdisp::CDispSubNeighbor {
+		cdisp::CDispSubNeighbor {
 			neighbor: self.read_ushort(),
 			neighbor_orientation: self.read_byte(),
 			span: self.read_byte(),
@@ -152,8 +148,8 @@ impl Reader {
 
 	pub fn read_cdispneighbor(
 		&mut self,
-	) -> CDispNeighbor {
-		CDispNeighbor {
+	) -> cdisp::CDispNeighbor {
+		cdisp::CDispNeighbor {
 			sub_neighbors: [
 				self.read_cdispsubneighbor(),
 				self.read_cdispsubneighbor(),
@@ -163,8 +159,8 @@ impl Reader {
 
 	pub fn read_cdispcornerneighbor(
 		&mut self,
-	) -> CDispCornerNeighbors {
-		CDispCornerNeighbors {
+	) -> cdisp::CDispCornerNeighbors {
+		cdisp::CDispCornerNeighbors {
 			neighbors: [
 				self.read_ushort(), self.read_ushort(),
 				self.read_ushort(), self.read_ushort(),
