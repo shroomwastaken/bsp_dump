@@ -1,7 +1,4 @@
-use crate::{
-	utils::Vector3,
-	parse::parse_entity_string,
-};
+use crate::utils::Vector3;
 
 #[derive(Debug, Clone, Copy)]
 pub struct CollideHeader {
