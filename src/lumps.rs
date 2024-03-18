@@ -3,10 +3,13 @@
 // and from other sources, too:
 // https://pysourcesdk.github.io/ValveBSP/datastructures.html
 
-use crate::utils::{
-	Vector3,
-	CDispCornerNeighbors,
-	CDispNeighbor,
+use crate:: {
+	utils::Vector3,
+	specific::{
+		cdisp,
+		physcol_data,
+		occlusion,
+	}
 };
 
 #[derive(Debug, Clone)]
@@ -53,7 +56,7 @@ pub enum LumpType {
 	PropTrips,
 	DispInfo(Vec<DispInfo>),
 	OriginalFaces(Vec<Face>),
-	PhyDisp,
+	PhyDisp(Vec<PhyDisp>),
 	PhysCollide(Vec<PhysModel>),
 	VertNormals,
 	VertNormalIndices,
@@ -285,8 +288,8 @@ pub struct DispInfo {
 	pub map_face: u16,
 	pub lightmap_alpha_start: i32,
 	pub lightmap_sample_position_start: i32,
-	pub edge_neighbors: [CDispNeighbor; 4],
-	pub corner_neighbors: [CDispCornerNeighbors; 4],
+	pub edge_neighbors: [cdisp::CDispNeighbor; 4],
+	pub corner_neighbors: [cdisp::CDispCornerNeighbors; 4],
 	pub allowed_verts: [u32; 10],
 }
 
@@ -346,34 +349,28 @@ pub struct LeafAmbientIndex {
 #[derive(Debug, Clone)]
 pub struct Occluder {
 	pub count: i32,
-	pub data: Vec<OccluderData>, // of length count
+	pub data: Vec<occlusion::OccluderData>, // of length count
 	pub poly_data_count: i32,
-	pub poly_data: Vec<OccluderPolyData>, // of length poly_data_count
+	pub poly_data: Vec<occlusion::OccluderPolyData>, // of length poly_data_count
 	pub vertex_index_count: i32,
 	pub vertex_indices: Vec<i32>, // of length vertex_index_count
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct OccluderData {
-	pub flags: i32,
-	pub first_poly: i32,
-	pub poly_count: i32,
-	pub mins: Vector3,
-	pub maxs: Vector3,
-	pub area: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub struct OccluderPolyData {
-	pub first_vertex_index: i32,
-	pub vertex_count: i32,
-	pub plane_num: i32,
-}
-
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub struct PhysModel {
 	pub model_index: i32,
 	pub data_size: i32, // size of collision data section
 	pub keydata_size: i32, // size of text section
 	pub solid_count: i32, // number of collision data sections
+	pub collision_data: Vec<physcol_data::CollisionData>,
+	// key: {same format as entity string}
+	// TODO: structure this data
+	pub key_data: String,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PhyDisp {
+	pub num_disps: u16,
+	// data_size: Vec<u16>
+	// this is commented out in the sdk so idk
 }

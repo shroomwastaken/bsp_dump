@@ -5,7 +5,8 @@ use std::{
 use crate::{
 	file_structure,
 	lumps::{self, LumpType},
-	VERSION
+	specific::occlusion,
+	VERSION,
 };
 
 pub fn dump_file(
@@ -241,7 +242,7 @@ pub fn dump_file(
 	if let LumpType::Occlusion(occluder) = &file.lump_data[9] {
 		to_write.push_str(&format!("\toccluder_data ({} entries)\n", occluder.count));
 		for i in 0..occluder.count {
-			let data: &lumps::OccluderData = &occluder.data[i as usize];
+			let data: &occlusion::OccluderData = &occluder.data[i as usize];
 			to_write.push_str(&format!("\t\t[occdata{i}]\n"));
 			to_write.push_str(&format!(
 				"\t\t\tflags: {}\n\t\t\tfirst_poly: {}\n\t\t\tpoly_count: {}\n",
@@ -254,7 +255,7 @@ pub fn dump_file(
 		}
 		to_write.push_str(&format!("\tpoly_data ({} entries)\n", occluder.poly_data_count));
 		for i in 0..occluder.poly_data_count {
-			let data: &lumps::OccluderPolyData = &occluder.poly_data[i as usize];
+			let data: &occlusion::OccluderPolyData = &occluder.poly_data[i as usize];
 			to_write.push_str(&format!("\t\t[polydata{i}]\n"));
 			to_write.push_str(&format!(
 				"\t\t\tfirst_vertex_index: {}\n\t\t\tvertex_count: {}\n\t\t\tplane_num: {}\n",
@@ -532,6 +533,59 @@ pub fn dump_file(
 				face.orig_face, face.first_prim_id, face.num_prims, face.smoothing_groups,
 			));
 
+			counter += 1;
+		}
+	}
+
+	// LUMP_PHYDISP
+	to_write.push_str("\nLUMP_PHYDISP (index 28)\n");
+	if let LumpType::PhyDisp(phydisps) = &file.lump_data[28] {
+		let mut counter: u32 = 0;
+		for phydisp in phydisps {
+			to_write.push_str(&format!("\t[phydisp{counter}]\n"));
+			to_write.push_str(&format!("\t\tnum_disps: {}\n", phydisp.num_disps));
+			counter += 1;
+		}
+	}
+
+	// LUMP_PHYSCOLLIDE
+	to_write.push_str("\nLUMP_PHYSCOLLIDE (index 29)\n");
+	if let LumpType::PhysCollide(physmodels) = &file.lump_data[29] {
+		let mut counter: u32 = 0;
+		for model in physmodels {
+			to_write.push_str(&format!("\t[physmodel{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tmodel_index: {}\n\t\tdata_size: {}\n\t\tkeydata_size: {}\n\t\tsolid_count: {}\n",
+				model.model_index, model.data_size, model.keydata_size, model.solid_count,
+			));
+			to_write.push_str("\t\tsolids:\n");
+			let mut data_counter: u32 = 0;
+			for data in &model.collision_data {
+				to_write.push_str(&format!("\t\t\t[{data_counter}]\n"));
+				to_write.push_str(&format!(
+					"\t\t\t\tcollide_header:\n\t\t\t\t\tsize: {}\n\t\t\t\t\tid: {}\n\t\t\t\t\tversion: {}\n",
+					data.collide_header.size,
+					String::from_utf8(
+						data.collide_header.id
+						.to_le_bytes()
+						.to_vec()
+					).unwrap(),
+					data.collide_header.version,
+				));
+				to_write.push_str(&format!(
+					"\t\t\t\t\tmodel_type: {}\n\t\t\t\tcompact_surface_header:\n",
+					data.collide_header.model_type,					
+				));
+				to_write.push_str(&format!(
+					"\t\t\t\t\tsurface_size: {}\n\t\t\t\t\tdrag_axis_areas: {}\n\t\t\t\t\taxis_map_size: {}\n",
+					data.compact_surface_header.surface_size,
+					data.compact_surface_header.drag_axis_areas,
+					data.compact_surface_header.axis_map_size,
+				));
+				to_write.push_str(&format!("\t\t\t\tdata: {} bytes (format unknown)\n", data.data.len()));
+				data_counter += 1;
+			}
+			to_write.push_str(&format!("\t\tkey_data: {:?}\n", model.key_data));
 			counter += 1;
 		}
 	}

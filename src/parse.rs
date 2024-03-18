@@ -4,6 +4,10 @@ use crate::{
 	lumps::{self, LumpType},
 	reader::Reader,
 	utils::Vector3,
+	specific::{
+		occlusion,
+		physcol_data,
+	}
 };
 
 pub fn parse_file(
@@ -236,7 +240,7 @@ pub fn parse_data_lumps(
 		vertex_indices: vec![],
 	};
 	for _ in 0..occluder.count {
-		occluder.data.push(lumps::OccluderData {
+		occluder.data.push(occlusion::OccluderData {
 			flags: reader.read_int(),
 			first_poly: reader.read_int(),
 			poly_count: reader.read_int(),
@@ -247,7 +251,7 @@ pub fn parse_data_lumps(
 	}
 	occluder.poly_data_count = reader.read_int();
 	for _ in 0..occluder.poly_data_count {
-		occluder.poly_data.push(lumps::OccluderPolyData {
+		occluder.poly_data.push(occlusion::OccluderPolyData {
 			first_vertex_index: reader.read_int(),
 			vertex_count: reader.read_int(),
 			plane_num: reader.read_int(),
@@ -521,6 +525,64 @@ pub fn parse_data_lumps(
 	println!("parsed faces lump! ({current_index})");
 	lump_data.push(LumpType::OriginalFaces(orig_faces));
 
+	//      ====LUMP_PHYDISP====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut phydisps: Vec<lumps::PhyDisp> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		phydisps.push(lumps::PhyDisp {
+			num_disps: reader.read_ushort(),
+		});
+	}
+	lump_data.push(LumpType::PhyDisp(phydisps));
+	println!("parsed phydisp lump! ({current_index})");
+
+	//      ====LUMP_PHYSCOLLIDE====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut physmodels: Vec<lumps::PhysModel> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		let mut model: lumps::PhysModel = lumps::PhysModel {
+			model_index: reader.read_int(),
+			data_size: reader.read_int(),
+			keydata_size: reader.read_int(),
+			solid_count: reader.read_int(),
+			collision_data: vec![],
+			key_data: "".to_string(),
+		};
+		if model.model_index == -1 {
+			physmodels.push(model);
+			break;
+		}
+		
+		for _ in 0..model.solid_count {
+			let mut coll_data: physcol_data::CollisionData = physcol_data::CollisionData {
+				collide_header: physcol_data::CollideHeader {
+					size: reader.read_int(),
+					id: reader.read_int(),
+					version: reader.read_ushort(),
+					model_type: reader.read_ushort(),
+				},
+				compact_surface_header: physcol_data::CompactSurfaceHeader {
+					surface_size: reader.read_int(),
+					drag_axis_areas: reader.read_vector3(),
+					axis_map_size: reader.read_int(),
+				},
+				data: vec![],
+			};
+			coll_data.data = reader.read_bytes(coll_data.compact_surface_header.surface_size as usize);
+			model.collision_data.push(coll_data);
+		}
+		model.key_data = reader.read_string();
+		physmodels.push(model);
+	}
+	lump_data.push(LumpType::PhysCollide(physmodels));
+	println!("parsed physcollide lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		reader.skip(lump_info[i].length as usize);
@@ -554,7 +616,7 @@ pub fn parse_entity_string(
 		if string == vec![""] { continue; }
 		let mut ent: Vec<(String, String)> = vec![];
 		for attrs in string {
-			if attrs == "" { continue; }
+			if attrs == "" || attrs == "\0" { continue; }
 			let splitted: Vec<String> = attrs.split(" ")
 			.map(|s| { s.trim_matches('\"').to_owned() })
 			.collect();
