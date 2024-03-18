@@ -6,7 +6,7 @@ use crate::{
 	utils::Vector3,
 	specific::{
 		occlusion,
-		physcol_data,
+		physcol_data:: {self, ModelHeaders},
 	}
 };
 
@@ -567,14 +567,29 @@ pub fn parse_data_lumps(
 					version: reader.read_ushort(),
 					model_type: reader.read_ushort(),
 				},
-				compact_surface_header: physcol_data::CompactSurfaceHeader {
-					surface_size: reader.read_int(),
-					drag_axis_areas: reader.read_vector3(),
-					axis_map_size: reader.read_int(),
-				},
+				second_header: ModelHeaders::None,
 				data: vec![],
 			};
-			coll_data.data = reader.read_bytes(coll_data.compact_surface_header.surface_size as usize);
+			if coll_data.collide_header.model_type == 0 {
+				let surface_size: i32 = reader.read_int();
+				coll_data.second_header = ModelHeaders::CompactSurfaceHeader(
+					physcol_data::CompactSurfaceHeader {
+						surface_size: surface_size.clone(),
+						drag_axis_areas: reader.read_vector3(),
+						axis_map_size: reader.read_int(),
+					}
+				);
+				coll_data.data = reader.read_bytes(surface_size as usize);
+			} else {
+				// it seems theres only model types 1 and 0
+				let size: i32 = reader.read_int();
+				coll_data.second_header = ModelHeaders::MoppSurfaceHeader(
+					physcol_data::MoppSurfaceHeader {
+						size: size.clone(),
+					}
+				);
+				coll_data.data = reader.read_bytes(size as usize);
+			}
 			model.collision_data.push(coll_data);
 		}
 		model.key_data = reader.read_string();

@@ -1,3 +1,6 @@
+// TODO: redo the dumping process,
+// hardcoding tabs is cringe af
+
 use std::{
 	fs,
 	io::Write,
@@ -5,7 +8,10 @@ use std::{
 use crate::{
 	file_structure,
 	lumps::{self, LumpType},
-	specific::occlusion,
+	specific::{
+		occlusion,
+		physcol_data::ModelHeaders,
+	},
 	VERSION,
 };
 
@@ -573,15 +579,24 @@ pub fn dump_file(
 					data.collide_header.version,
 				));
 				to_write.push_str(&format!(
-					"\t\t\t\t\tmodel_type: {}\n\t\t\t\tcompact_surface_header:\n",
+					"\t\t\t\t\tmodel_type: {}\n",
 					data.collide_header.model_type,					
 				));
-				to_write.push_str(&format!(
-					"\t\t\t\t\tsurface_size: {}\n\t\t\t\t\tdrag_axis_areas: {}\n\t\t\t\t\taxis_map_size: {}\n",
-					data.compact_surface_header.surface_size,
-					data.compact_surface_header.drag_axis_areas,
-					data.compact_surface_header.axis_map_size,
-				));
+				if let ModelHeaders::CompactSurfaceHeader(c) = data.second_header {
+					to_write.push_str("\t\t\t\tcompact_surface_header:\n");
+					to_write.push_str(&format!(
+						"\t\t\t\t\tsurface_size: {}\n\t\t\t\t\tdrag_axis_areas: {}\n\t\t\t\t\taxis_map_size: {}\n",
+						c.surface_size,
+						c.drag_axis_areas,
+						c.axis_map_size,
+					));
+				} else if let ModelHeaders::MoppSurfaceHeader(m) = data.second_header {
+					to_write.push_str("\t\t\t\tmopp_surface_header:\n");
+					to_write.push_str(&format!(
+						"\t\t\t\t\tsize: {}\n",
+						m.size,
+					));
+				}
 				to_write.push_str(&format!("\t\t\t\tdata: {} bytes (format unknown)\n", data.data.len()));
 				data_counter += 1;
 			}
