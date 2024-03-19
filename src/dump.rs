@@ -613,6 +613,26 @@ pub fn dump_file(
 		}
 	}
 
+	// LUMP_VERTNORMALS
+	to_write.push_str("\nLUMP_VERTNORMALS (index 30)\n");
+	if let LumpType::VertNormal(v) = &file.lump_data[30] {
+		let mut counter: u32 = 0;
+		for vertnormal in v {
+			to_write.push_str(&format!("\t[vnorm{counter}] {}\n", vertnormal.normal));
+			counter += 1;
+		}
+	}
+
+	// LUMP_VERTNORMALINDICES
+	to_write.push_str("\nLUMP_VERTNORMALINDICIES (index 31)\n");
+	if let LumpType::VertNormalIndices(v) = &file.lump_data[31] {
+		let mut counter: u32 = 0;
+		for vertnormal in v {
+			to_write.push_str(&format!("\t[vnormidx{counter}] {}\n", vertnormal.index));
+			counter += 1;
+		}
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",

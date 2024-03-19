@@ -602,6 +602,34 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::PhysCollide(physmodels));
 	println!("parsed physcollide lump! ({current_index})");
 
+	//      ====LUMP_VERTNORMALS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut vertnormals: Vec<lumps::VertexNormal> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		vertnormals.push(lumps::VertexNormal {
+			normal: reader.read_vector3()
+		});
+	}
+	lump_data.push(LumpType::VertNormal(vertnormals));
+	println!("parsed vertnormals lump! {current_index}");
+
+	//      ====LUMP_VERTNORMALINDICES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut vertnormalindices: Vec<lumps::VertexNormalIndex> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		vertnormalindices.push(lumps::VertexNormalIndex {
+			index: reader.read_ushort(),
+		});
+	}
+	lump_data.push(LumpType::VertNormalIndices(vertnormalindices));
+	println!("parsed vertnormals lump! {current_index}");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		reader.skip(lump_info[i].length as usize);

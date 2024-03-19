@@ -63,8 +63,8 @@ pub enum LumpType {
 	OriginalFaces(Vec<Face>),
 	PhyDisp(Vec<PhyDisp>),
 	PhysCollide(Vec<PhysModel>),
-	VertNormals,
-	VertNormalIndices,
+	VertNormal(Vec<VertexNormal>),
+	VertNormalIndices(Vec<VertexNormalIndex>),
 	DispLightmapAlphas,
 	DispVerts(Vec<DispVert>),
 	DispLightmapSamplePositions,
@@ -376,4 +376,16 @@ pub struct PhyDisp {
 	pub num_disps: u16,
 	// data_size: Vec<u16>
 	// this is commented out in the sdk so idk
+}
+
+// i just want everything to be a struct ok
+#[derive(Debug, Clone, Copy)]
+pub struct VertexNormal {
+	pub normal: Vector3,
+}
+
+// and i mean everything
+#[derive(Debug, Clone, Copy)]
+pub struct VertexNormalIndex {
+	pub index: u16
 }
