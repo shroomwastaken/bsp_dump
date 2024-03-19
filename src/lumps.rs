@@ -363,9 +363,8 @@ pub struct PhysModel {
 	pub keydata_size: i32, // size of text section
 	pub solid_count: i32, // number of collision data sections
 	pub collision_data: Vec<physcol_data::CollisionData>,
-	// key: {same format as entity string}
-	// TODO: structure this data
-	pub key_data: String,
+	// key {same format as entity string}
+	pub key_data: Vec<(String, Vec<(String, String)>)>,
 }
 
 #[derive(Debug, Clone, Copy)]

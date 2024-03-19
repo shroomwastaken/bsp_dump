@@ -6,7 +6,7 @@ use crate::{
 	utils::Vector3,
 	specific::{
 		occlusion,
-		physcol_data:: {self, ModelHeaders},
+		physcol_data::{self, ModelHeaders},
 	}
 };
 
@@ -552,7 +552,7 @@ pub fn parse_data_lumps(
 			keydata_size: reader.read_int(),
 			solid_count: reader.read_int(),
 			collision_data: vec![],
-			key_data: "".to_string(),
+			key_data: vec![],
 		};
 		if model.model_index == -1 {
 			physmodels.push(model);
@@ -592,7 +592,7 @@ pub fn parse_data_lumps(
 			}
 			model.collision_data.push(coll_data);
 		}
-		model.key_data = reader.read_string();
+		model.key_data = physcol_data::parse_keydata_string(reader.read_string());
 		physmodels.push(model);
 	}
 	lump_data.push(LumpType::PhysCollide(physmodels));

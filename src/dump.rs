@@ -600,7 +600,13 @@ pub fn dump_file(
 				to_write.push_str(&format!("\t\t\t\tdata: {} bytes (format unknown)\n", data.data.len()));
 				data_counter += 1;
 			}
-			to_write.push_str(&format!("\t\tkey_data: {:?}\n", model.key_data));
+			to_write.push_str("\t\tkey_data:\n");
+			for obj in &model.key_data {
+				to_write.push_str(&format!("\t\t\t{}\n", obj.0));
+				for attr in &obj.1 {
+					to_write.push_str(&format!("\t\t\t\t{}: {}\n", attr.0, attr.1));
+				}
+			}
 			counter += 1;
 		}
 	}

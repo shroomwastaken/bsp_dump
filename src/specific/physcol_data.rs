@@ -33,3 +33,42 @@ pub enum ModelHeaders {
 	CompactSurfaceHeader(CompactSurfaceHeader), // model type 0
 	MoppSurfaceHeader(MoppSurfaceHeader), // model type 1
 }
+
+// more ugly string parsing code :))))
+pub fn parse_keydata_string(
+	keydata: String,
+) -> Vec<(String, Vec<(String, String)>)> {
+	let objs: Vec<(&str, &str)> = keydata.split("\n}\n")
+	.map(|s| {
+		if s != "\0" {
+			s.split_once(" {\n")
+			.unwrap()
+		} else {
+			("", "")
+		} 
+	})
+	.collect();
+
+	let mut res: Vec<(String, Vec<(String, String)>)> = vec![]; 
+	for obj in objs {
+		if obj == ("", "") { continue }
+		// this is one of the pieces of code of all time
+		let attrs: Vec<(String, String)> = obj.1.split("\n")
+		.map(|s| {
+			s.split(" ")
+			.map(|s| {
+				s.trim_matches('\"')
+				.to_owned()
+			})
+			.collect::<Vec<String>>()
+		})
+		.map(|vec| {
+			(vec[0].clone(), vec[1].clone())
+		})
+		.collect();
+	
+		res.push((obj.0.to_owned(), attrs));
+	}
+
+	res
+}
