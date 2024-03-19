@@ -7,6 +7,10 @@ use crate::{
 	specific::{
 		occlusion,
 		physcol_data::{self, ModelHeaders},
+	},
+	flags::{
+		ContentsFlags,
+		SurfaceFlags,
 	}
 };
 
@@ -176,7 +180,7 @@ pub fn parse_data_lumps(
 					reader.read_float(), reader.read_float()
 				],
 			],
-			flags: reader.read_int(),
+			flags: SurfaceFlags::from_bits_truncate(reader.read_uint()),
 			texdata: reader.read_int(),
 		});
 	}
@@ -273,7 +277,7 @@ pub fn parse_data_lumps(
 	let mut leafs: Vec<lumps::Leaf> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		leafs.push(lumps::Leaf {
-			contents: reader.read_int(),
+			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 			cluster: reader.read_short(),
 			area_flags: reader.read_short(),
 			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
@@ -390,7 +394,7 @@ pub fn parse_data_lumps(
 		brushes.push(lumps::Brush {
 			first_side: reader.read_int(),
 			num_sides: reader.read_int(), 
-			contents: reader.read_int(),
+			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 		});
 	}
 	println!("parsed brushes lump! ({current_index})");
@@ -471,7 +475,7 @@ pub fn parse_data_lumps(
 			power: reader.read_int(),
 			min_tess: reader.read_int(),
 			smoothing_angle: reader.read_float(),
-			contents: reader.read_int(),
+			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 			map_face: reader.read_ushort(),
 			lightmap_alpha_start: reader.read_int(),
 			lightmap_sample_position_start: reader.read_int(),

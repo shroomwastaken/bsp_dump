@@ -13,6 +13,7 @@ use crate::{
 		physcol_data::ModelHeaders,
 	},
 	VERSION,
+	utils::bitflags_to_string,
 };
 
 pub fn dump_file(
@@ -187,7 +188,7 @@ pub fn dump_file(
 			));
 			to_write.push_str(&format!(
 				"\t\tflags: {}\n\t\ttexdata: {}\n",
-				texinfo.flags, texinfo.texdata,
+				bitflags_to_string(texinfo.flags.iter_names()), texinfo.texdata,
 			));
 			counter += 1;
 		}
@@ -278,7 +279,7 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[leaf{counter}]\n"));
 			to_write.push_str(&format!(
 				"\t\tcontents: {}\n\t\tcluster: {}\n\t\tarea_flags: {}\n",
-				leaf.contents, leaf.cluster, leaf.area_flags,
+				bitflags_to_string(leaf.contents.iter_names()), leaf.cluster, leaf.area_flags,
 			));
 			to_write.push_str(&format!(
 				"\t\tmins: {:?}\n\t\tmaxs: {:?}\n\t\tfirst_leaf_face, num_leaf_faces: {}, {}\n",
@@ -381,7 +382,7 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[brush{counter}]\n"));
 			to_write.push_str(&format!(
 				"\t\tfirst_side: {}\n\t\tnum_sides: {}\n\t\tcontents: {}\n",
-				brush.first_side, brush.num_sides, brush.contents,
+				brush.first_side, brush.num_sides, bitflags_to_string(brush.contents.iter_names()),
 			));
 			counter += 1;
 		}
@@ -455,7 +456,8 @@ pub fn dump_file(
 			));
 			to_write.push_str(&format!(
 				"\t\tcontents: {}\n\t\tmap_face: {}\n\t\tlightmap_alpha_start: {}\n",
-				dispinfo.contents, dispinfo.map_face, dispinfo.lightmap_alpha_start,
+				bitflags_to_string(dispinfo.contents.iter_names()), dispinfo.map_face,
+				dispinfo.lightmap_alpha_start,
 			));
 			to_write.push_str(&format!(
 				"\t\tlightmap_sample_position_start: {}\n\t\tedge_neighbors:\n",

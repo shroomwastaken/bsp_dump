@@ -9,7 +9,12 @@ use crate:: {
 		cdisp,
 		physcol_data,
 		occlusion,
-	}
+	},
+	flags::{
+		ContentsFlags,
+		SurfaceFlags,
+		DispTriFlags,
+	},
 };
 
 #[derive(Debug, Clone)]
@@ -78,8 +83,7 @@ pub enum LumpType {
 	Overlays(Vec<Overlay>),
 	LeafMinDistToWater,
 	FaceMacroTextureInfo,
-	// TODO: these are flags, define flags
-	DispTris(Vec<u16>),
+	DispTris(Vec<DispTriFlags>),
 	PhysCollideSurface,
 	PropBlob,
 	WaterOverlays,
@@ -156,7 +160,7 @@ pub struct Node {
 
 #[derive(Debug, Clone, Copy)]
 pub struct Leaf {
-	pub contents: i32, // flags, same as in brush lump
+	pub contents: ContentsFlags, // flags, same as in brush lump
 	pub cluster: i16,
 	pub area_flags: i16, // bitfield, area takes 9 bits, flags takes 7
 
@@ -185,7 +189,7 @@ pub struct FaceID {
 pub struct TexInfo {
 	pub texture_vecs: [[f32; 4]; 2],
 	pub lightmap_vecs: [[f32; 4]; 2],
-	pub flags: i32,
+	pub flags: SurfaceFlags,
 	pub texdata: i32, // index into texdata array
 }
 
@@ -221,7 +225,7 @@ pub struct WorldLight {
 pub struct Brush {
 	pub first_side: i32, // index into brushside array
 	pub num_sides: i32, // firstside and the next numsides make up all the sides in the brush
-	pub contents: i32, // TODO: define the fucking flags
+	pub contents: ContentsFlags,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -284,7 +288,7 @@ pub struct DispInfo {
 	pub power: i32,
 	pub min_tess: i32,
 	pub smoothing_angle: f32,
-	pub contents: i32,
+	pub contents: ContentsFlags,
 	pub map_face: u16,
 	pub lightmap_alpha_start: i32,
 	pub lightmap_sample_position_start: i32,
