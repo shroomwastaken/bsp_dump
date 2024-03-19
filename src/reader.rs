@@ -50,7 +50,7 @@ impl Reader {
 			.unwrap()
 		)
 	}
-	
+
 	pub fn read_uint(
 		&mut self,
 	) -> u32 {
@@ -60,7 +60,7 @@ impl Reader {
 			.unwrap()
 		)
 	}
-	
+
 	pub fn read_ushort(
 		&mut self,
 	) -> u16 {
@@ -80,7 +80,7 @@ impl Reader {
 			.unwrap()
 		)
 	}
-	
+
 	pub fn read_vector3(
 		&mut self,
 	) -> Vector3 {

@@ -26,6 +26,6 @@ pub fn bitflags_to_string<B: bitflags::Flags>(names: bitflags::iter::IterNames<B
     } else {
         flag_str = flag_str[..flag_str.len() - 3].to_string();
     }
-    
+
     return flag_str;
 }

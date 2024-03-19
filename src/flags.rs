@@ -35,7 +35,7 @@ bitflags! {
 		const Translucent        = 0x10000000;
 		const Ladder             = 0x20000000;
 		const Hitbox             = 0x80000000;
-	}	
+	}
 }
 
 bitflags! {

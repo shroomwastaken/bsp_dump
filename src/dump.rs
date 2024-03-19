@@ -55,7 +55,7 @@ pub fn dump_file(
 
 	//      ====lump dumping====
 	to_write.push_str("====lumps====\n");
-	
+
 	// LUMP_ENTITIES
 	to_write.push_str("\nLUMP_ENTITIES (index 0)\n");
 	if let LumpType::Entities(ents) = &file.lump_data[0] {
@@ -77,7 +77,7 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[pln{counter}]\n"));
 			to_write.push_str(&format!(
 				"\t\tnormal: {}\n\t\tdist: {}\n\t\ttype: {}\n",
-				plane.normal, plane.dist, plane.r#type, 
+				plane.normal, plane.dist, plane.r#type,
 			));
 			counter += 1;
 		}
@@ -315,7 +315,7 @@ pub fn dump_file(
 			counter += 1;
 		}
 	}
-	
+
 	// LUMP_EDGES
 	to_write.push_str("\nLUMP_EDGES (index 12)\n");
 	if let LumpType::Edges(edges) = &file.lump_data[12] {
@@ -323,12 +323,12 @@ pub fn dump_file(
 		for edge in edges {
 			to_write.push_str(&format!(
 				"\t[edge{}] vertices: {}, {}\n",
-				counter, edge.pair[0], edge.pair[1] 
+				counter, edge.pair[0], edge.pair[1]
 			));
 			counter += 1;
 		}
 	}
-	
+
 	// LUMP_SURFEDES
 	to_write.push_str("\nLUMP_SURFEDGES (index 13)\n");
 	to_write.push_str("positive number: edge referenced from 1st to 2nd vertex (->)\n");
@@ -434,7 +434,7 @@ pub fn dump_file(
 			counter += 1;
 		}
 	}
-	
+
 	// LUMP_UNUSED22/23/24/25
 	to_write.push_str("\nLUMP_UNUSED22/23/24/25\n");
 	to_write.push_str("\tno data, these are unused\n");
@@ -582,7 +582,7 @@ pub fn dump_file(
 				));
 				to_write.push_str(&format!(
 					"\t\t\t\t\tmodel_type: {}\n",
-					data.collide_header.model_type,					
+					data.collide_header.model_type,
 				));
 				if let ModelHeaders::CompactSurfaceHeader(c) = data.second_header {
 					to_write.push_str("\t\t\t\tcompact_surface_header:\n");

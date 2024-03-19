@@ -45,11 +45,11 @@ pub fn parse_keydata_string(
 			.unwrap()
 		} else {
 			("", "")
-		} 
+		}
 	})
 	.collect();
 
-	let mut res: Vec<(String, Vec<(String, String)>)> = vec![]; 
+	let mut res: Vec<(String, Vec<(String, String)>)> = vec![];
 	for obj in objs {
 		if obj == ("", "") { continue }
 		// this is one of the pieces of code of all time
@@ -66,7 +66,7 @@ pub fn parse_keydata_string(
 			(vec[0].clone(), vec[1].clone())
 		})
 		.collect();
-	
+
 		res.push((obj.0.to_owned(), attrs));
 	}
 

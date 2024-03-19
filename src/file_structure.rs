@@ -40,7 +40,7 @@ pub struct LumpInfo {
 	pub length: u32, // size of lump (bytes)
 	pub version: u32, // lump format version (usually 0)
 	pub ident: [u8; 4], // lump ident code (usually [0, 0, 0, 0])
-	
+
 	// not actually in the file ill just use this so i can sort by file offset
 	// and still read anything correctly
 	pub index: u8,

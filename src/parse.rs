@@ -60,13 +60,13 @@ pub fn parse_data_lumps(
 ) {
 	let mut current_index: usize = 0;
 	let mut info: &LumpInfo = &lump_info[current_index];
-	
+
 	//      ====LUMP_ENTITIES====
 	reader.index = info.file_offset as usize;
 	let ent_string: String = reader.read_string();
 	lump_data.push(LumpType::Entities(parse_entity_string(ent_string)));
 	println!("parsed entities lump! ({current_index})");
-	
+
 	//      ====LUMP_PLANES====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -130,7 +130,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed visibility lump! ({current_index})");
 	lump_data.push(LumpType::Visibility(vis));
-	
+
 	//      ====LUMP_NODES====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -216,7 +216,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed faces lump! ({current_index})");
 	lump_data.push(LumpType::Faces(faces));
-	
+
 	//      ====LUMP_LIGHTING====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -228,7 +228,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed lighting lump! ({current_index})");
 	lump_data.push(LumpType::Lighting(lightings));
-	
+
 	//      ====LUMP_OCCLUSION====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -296,7 +296,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed leafs lump! ({current_index})");
 	lump_data.push(LumpType::Leafs(leafs));
-	
+
 	//      ====LUMP_FACEIDS====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -322,7 +322,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed edges lump! ({current_index})");
 	lump_data.push(LumpType::Edges(edges));
-	
+
 	//      ====LUMP_SURFEDGES====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -334,7 +334,7 @@ pub fn parse_data_lumps(
 	}
 	println!("parsed surfedges lump! ({current_index})");
 	lump_data.push(LumpType::SurfEdges(surfedges));
-	
+
 	//      ====LUMP_MODELS====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -359,31 +359,31 @@ pub fn parse_data_lumps(
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	
+
 	reader.skip(info.length as usize);
 	lump_data.push(LumpType::None);
 	println!("skipped worldlights lump! ({current_index})");
-	
+
 	// TODO: figure out the structure
 	//      ====LUMP_LEAFFACES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	
+
 	reader.skip(info.length as usize);
 	lump_data.push(LumpType::None);
 	println!("skipped leaffaces lump! ({current_index})");
-	
+
 	// TODO: figure out the structure
 	//      ====LUMP_LEAFBRUSHES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	
+
 	reader.skip(info.length as usize);
 	lump_data.push(LumpType::None);
 	println!("skipped leafbrushes lump! ({current_index})");
-	
+
 	//      ====LUMP_BRUSHES====
 	current_index += 1;
 	info = &lump_info[current_index];
@@ -393,7 +393,7 @@ pub fn parse_data_lumps(
 	while reader.index < (info.file_offset + info.length) as usize {
 		brushes.push(lumps::Brush {
 			first_side: reader.read_int(),
-			num_sides: reader.read_int(), 
+			num_sides: reader.read_int(),
 			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 		});
 	}
@@ -562,7 +562,7 @@ pub fn parse_data_lumps(
 			physmodels.push(model);
 			break;
 		}
-		
+
 		for _ in 0..model.solid_count {
 			let mut coll_data: physcol_data::CollisionData = physcol_data::CollisionData {
 				collide_header: physcol_data::CollideHeader {
