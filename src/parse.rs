@@ -614,7 +614,7 @@ pub fn parse_data_lumps(
 		});
 	}
 	lump_data.push(LumpType::VertNormal(vertnormals));
-	println!("parsed vertnormals lump! {current_index}");
+	println!("parsed vertnormals lump! ({current_index})");
 
 	//      ====LUMP_VERTNORMALINDICES====
 	current_index += 1;
@@ -628,7 +628,32 @@ pub fn parse_data_lumps(
 		});
 	}
 	lump_data.push(LumpType::VertNormalIndices(vertnormalindices));
-	println!("parsed vertnormals lump! {current_index}");
+	println!("parsed vertnormals lump! ({current_index})");
+
+	//      ====LUMP_DISPLIGHTMAPALPHAS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	// the structure for this one is unknown
+	lump_data.push(LumpType::None);
+	println!("skipped displightmapalphas lump! ({current_index})");
+
+	//      ====LUMP_DISPVERTS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut dispverts: Vec<lumps::DispVert> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		dispverts.push(lumps::DispVert {
+			vec: reader.read_vector3(),
+			dist: reader.read_float(),
+			alpha: reader.read_float(),
+		});
+	}
+	lump_data.push(LumpType::DispVerts(dispverts));
+	println!("parsed dispverts lump! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {

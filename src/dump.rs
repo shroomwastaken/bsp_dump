@@ -633,6 +633,23 @@ pub fn dump_file(
 		}
 	}
 
+	// LUMP_DISPLIGHTMAPALPHAS
+	to_write.push_str("\nLUMP_DISPLIGHTMAPALPHAS (index 32)\n\tstructure unknown :(\n");
+
+	// LUMP_DISPVERTS
+	to_write.push_str("\nLUMP_DISPVERTS (index 33)\n");
+	if let LumpType::DispVerts(dispverts) = &file.lump_data[33] {
+		let mut counter: u32 = 0;
+		for dispvert in dispverts {
+			to_write.push_str(&format!("\t[dispvrt{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tvec: {}\n\t\tdist: {}\n\t\talpha: {}\n",
+				dispvert.vec, dispvert.dist, dispvert.alpha,
+			));
+			counter += 1;
+		}
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",
