@@ -68,6 +68,8 @@ pub fn dump_file(
 			}
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_PLANES
@@ -82,6 +84,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_TEXDATA
@@ -101,6 +105,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_VERTEXES
@@ -111,6 +117,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[vtx{counter}] {vertex}\n"));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_VISIBILITY
@@ -128,6 +136,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_NODES
@@ -174,6 +184,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_TEXINFO
@@ -193,6 +205,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_FACES
@@ -230,6 +244,8 @@ pub fn dump_file(
 
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_LIGHTING
@@ -243,6 +259,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_OCCLUSION
@@ -303,6 +321,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t\tpadding: {}\n", leaf.padding));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_FACEIDS
@@ -315,6 +335,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t\t[faceid{counter}] id: {}\n", faceid.id));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_EDGES
@@ -328,6 +350,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_SURFEDES
@@ -343,6 +367,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_MODELS
@@ -361,6 +387,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_WORLDLIGHTS
@@ -387,6 +415,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_BRUSHSIDES
@@ -402,6 +432,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_AREAS
@@ -416,6 +448,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_AREAPORTALS
@@ -434,6 +468,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_UNUSED22/23/24/25
@@ -504,9 +540,7 @@ pub fn dump_file(
 			counter += 1;
 		}
 		// apparently this one can just be empty for some reason
-		if counter == 0 {
-			to_write.push_str("\tempty\n");
-		}
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_ORIGINALFACES
@@ -544,6 +578,8 @@ pub fn dump_file(
 
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_PHYDISP
@@ -555,6 +591,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t\tnum_disps: {}\n", phydisp.num_disps));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_PHYSCOLLIDE
@@ -612,6 +650,8 @@ pub fn dump_file(
 			}
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_VERTNORMALS
@@ -622,6 +662,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[vnorm{counter}] {}\n", vertnormal.normal));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_VERTNORMALINDICES
@@ -632,6 +674,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[vnormidx{counter}] {}\n", vertnormal.index));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_DISPLIGHTMAPALPHAS
@@ -649,6 +693,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS
@@ -676,7 +722,7 @@ pub fn dump_file(
 		to_write.push_str(&format!("\t\tlump_count: {}\n", gl.header.lump_count));
 		to_write.push_str("\t\tlump infos:\n");
 		for c in 0..gl.header.lump_count {
-			let gl_info: &gamelump::GameLumpInfo = &gl.header.game_lump_info[c as usize]; 
+			let gl_info: &gamelump::GameLumpInfo = &gl.header.game_lump_info[c as usize];
 			to_write.push_str(&format!("\t\t\t[{c}]\n"));
 			to_write.push_str(&format!(
 				"\t\t\t\tid: {} ({})\n\t\t\t\tflags: {}\n\t\t\t\tversion: {}\n",
@@ -691,6 +737,8 @@ pub fn dump_file(
 				gl_info.file_offset, gl_info.file_length,
 			));
 		}
+
+		// this lump should never be empty (?)
 	}
 
 	// done!
