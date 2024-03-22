@@ -9,6 +9,7 @@ use crate:: {
 		cdisp,
 		physcol_data,
 		occlusion,
+		gamelump,
 	},
 	flags::{
 		ContentsFlags,
@@ -67,9 +68,9 @@ pub enum LumpType {
 	VertNormalIndices(Vec<VertexNormalIndex>),
 	DispLightmapAlphas,
 	DispVerts(Vec<DispVert>),
-	DispLightmapSamplePositions,
+	DispLightmapSamplePositions(Vec<DispLightmapSamplePosition>),
 	// lump count, lump data
-	GameLump(i32, Vec<GameLumpData>),
+	GameLump(GameLump),
 	LeafWaterData,
 	Primitives,
 	PrimVerts,
@@ -267,17 +268,10 @@ pub struct Vis {
 	pub byte_offsets: Vec<[i32; 2]>,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct GameLumpData {
-	pub id: i32,
-	pub flags: u16,
-	pub version: u16,
-
-	// offset from beginning of file
-	// (except for console portal 2, there its from beginning of this lump)
-	pub file_offset: i32,
-
-	pub file_length: i32,
+#[derive(Debug, Clone)]
+pub struct GameLump {
+	pub header: gamelump::GameLumpHeader,
+	pub data: Vec<gamelump::GameLumpData>
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -388,4 +382,9 @@ pub struct VertexNormal {
 #[derive(Debug, Clone, Copy)]
 pub struct VertexNormalIndex {
 	pub index: u16
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct DispLightmapSamplePosition {
+	pub unknown: u8, // no clue
 }

@@ -7,6 +7,7 @@ use crate::{
 	specific::{
 		occlusion,
 		physcol_data::{self, ModelHeaders},
+		gamelump,
 	},
 	flags::{
 		ContentsFlags,
@@ -654,6 +655,44 @@ pub fn parse_data_lumps(
 	}
 	lump_data.push(LumpType::DispVerts(dispverts));
 	println!("parsed dispverts lump! ({current_index})");
+
+	//      ====LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut dlsp: Vec<lumps::DispLightmapSamplePosition> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		dlsp.push(lumps::DispLightmapSamplePosition { unknown: reader.read_byte() });
+	}
+	lump_data.push(LumpType::DispLightmapSamplePositions(dlsp));
+	println!("parsed displightmapsamplepositions lump! ({current_index})");
+
+	//      ====LUMP_GAME_LUMP====
+	// the most annoying lump of them all (probably)
+	// for now ill only read the headers
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut gamelump: lumps::GameLump = lumps::GameLump {
+		header: gamelump::GameLumpHeader {
+			lump_count: reader.read_int(),
+			game_lump_info: vec![],
+		},
+		data: vec![],
+	};
+	for _ in 0..gamelump.header.lump_count {
+		gamelump.header.game_lump_info.push(gamelump::GameLumpInfo {
+			id: reader.read_int(),
+			flags: reader.read_ushort(),
+			version: reader.read_ushort(),
+			file_offset: reader.read_int(),
+			file_length: reader.read_int(),
+		});
+	}
+	lump_data.push(LumpType::GameLump(gamelump));
+	println!("parsed gamelump headers! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {

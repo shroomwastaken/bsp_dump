@@ -11,6 +11,7 @@ use crate::{
 	specific::{
 		occlusion,
 		physcol_data::ModelHeaders,
+		gamelump,
 	},
 	VERSION,
 	utils::bitflags_to_string,
@@ -647,6 +648,48 @@ pub fn dump_file(
 				dispvert.vec, dispvert.dist, dispvert.alpha,
 			));
 			counter += 1;
+		}
+	}
+
+	// LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS
+	to_write.push_str("\nLUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS (index 34)\n");
+	if let LumpType::DispLightmapSamplePositions(dlsp) = &file.lump_data[34] {
+		to_write.push_str(&format!("\tstructure unknown, {} bytes\n\t", dlsp.len()));
+		/* not going to write the bytes for now
+		let mut counter: u32 = 0;
+		for byte in dlsp {
+			if counter % 32 == 0 {
+				to_write.push('\n');
+				to_write.push('\t');
+			}
+			to_write.push_str(&format!("{:x} ", byte.unknown));
+			counter += 1;
+		}
+		to_write.push('\n');
+		*/
+	}
+
+	// LUMP_GAME_LUMP
+	to_write.push_str("\nLUMP_GAME_LUMP (index 35)\n");
+	if let LumpType::GameLump(gl) = &file.lump_data[35] {
+		to_write.push_str("\theader:\n");
+		to_write.push_str(&format!("\t\tlump_count: {}\n", gl.header.lump_count));
+		to_write.push_str("\t\tlump infos:\n");
+		for c in 0..gl.header.lump_count {
+			let gl_info: &gamelump::GameLumpInfo = &gl.header.game_lump_info[c as usize]; 
+			to_write.push_str(&format!("\t\t\t[{c}]\n"));
+			to_write.push_str(&format!(
+				"\t\t\t\tid: {} ({})\n\t\t\t\tflags: {}\n\t\t\t\tversion: {}\n",
+				            // i have no clue why but this one string is big endian???
+				            // if i convert 1936749168 to le bytes and to a string its "prps"
+				            // not "sprp" how its supposed to be
+				gl_info.id, String::from_utf8(gl_info.id.to_be_bytes().to_vec()).unwrap(),
+				gl_info.flags, gl_info.version,
+			));
+			to_write.push_str(&format!(
+				"\t\t\t\tfile_offset: {} bytes\n\t\t\t\tfile_length: {} bytes\n",
+				gl_info.file_offset, gl_info.file_length,
+			));
 		}
 	}
 
