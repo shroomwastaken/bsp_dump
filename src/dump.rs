@@ -737,6 +737,34 @@ pub fn dump_file(
 				gl_info.file_offset, gl_info.file_length,
 			));
 		}
+		to_write.push_str("\tdata:\n");
+		for elem in &gl.data {
+			// again, only sprp for now
+			let gamelump::GameLumpData::StaticProps(sprp) = elem;
+			to_write.push_str("\t\tsprp (static props):\n");
+			to_write.push_str(&format!(
+				"\t\t\tdict:\n\t\t\t\tdict_entries: {}\n\t\t\t\tentries:\n",
+				sprp.dict.dict_entries,
+			));
+			for c in 0..sprp.dict.dict_entries {
+				to_write.push_str(&format!(
+					"\t\t\t\t\t[{c}] {}\n",
+					sprp.dict.names[c as usize],
+				));
+			}
+			to_write.push_str(&format!(
+				"\t\t\tleafs:\n\t\t\t\tleaf_entries: {}\n\t\t\t\tentries:\n",
+				sprp.leafs.leaf_entries,
+			));
+			for c in 0..sprp.leafs.leaf_entries {
+				to_write.push_str(&format!(
+					"\t\t\t\t\t[{c}] {}\n",
+					sprp.leafs.leafs[c as usize],
+				));
+			}
+			
+		}
+		to_write.push_str("\tno more data available");
 
 		// this lump should never be empty (?)
 	}

@@ -691,12 +691,41 @@ pub fn parse_data_lumps(
 			file_length: reader.read_int(),
 		});
 	}
+	// ill only read the two static props headers for now
+	for g_lump_info in &gamelump.header.game_lump_info {
+		reader.index = g_lump_info.file_offset as usize;
+		if &g_lump_info.id.to_be_bytes() != b"sprp" { continue }
+		let mut dict: gamelump::StaticPropDictLump = gamelump::StaticPropDictLump {
+			dict_entries: reader.read_int(),
+			names: vec![],
+		};
+		for _ in 0..dict.dict_entries {
+			// uhhhh the way im reading strings at the moment is confusing
+			// ill just remove the null byte manually
+			// all of these names are null-padded to 128 bytes for some reason
+			let mut name: String = reader.read_string();
+			reader.index += 128 - name.len();
+			name = name.as_str()[..name.len() - 1].to_string();
+			dict.names.push(name);
+		}
+		let mut leafs: gamelump::StaticPropLeafLump = gamelump::StaticPropLeafLump {
+			leaf_entries: reader.read_int(),
+			leafs: vec![],
+		};
+		for _ in 0..leafs.leaf_entries { leafs.leafs.push(reader.read_ushort()) }
+		gamelump.data.push(gamelump::GameLumpData::StaticProps(
+			gamelump::StaticProps {
+				dict,
+				leafs,
+				num_entries: reader.read_int(),
+			}
+		));
+	}
 	lump_data.push(LumpType::GameLump(gamelump));
 	println!("parsed gamelump headers! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
-		reader.skip(lump_info[i].length as usize);
 		lump_data.push(LumpType::None);
 		println!("skipped lump with index {}!", i);
 	}

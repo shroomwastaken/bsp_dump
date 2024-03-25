@@ -19,5 +19,32 @@ pub struct GameLumpInfo {
 
 #[derive(Debug, Clone)]
 pub enum GameLumpData {
+	StaticProps(StaticProps),
+}
 
+// sprp
+
+#[derive(Debug, Clone)]
+pub struct StaticProps {
+	pub dict: StaticPropDictLump,
+	pub leafs: StaticPropLeafLump,
+	pub num_entries: i32,
+	// pub entries: Vec<StaticPropLump>,
+}
+
+#[derive(Debug, Clone)]
+pub struct StaticPropDictLump {
+	pub dict_entries: i32,
+
+	// this vector is of length dict_entries
+	// the Strings are all null-padded to 128 bytes
+	pub names: Vec<String>, // model names
+}
+
+#[derive(Debug, Clone)]
+pub struct StaticPropLeafLump {
+	pub leaf_entries: i32,
+
+	// this vector is of length leaf_entries
+	pub leafs: Vec<u16>,
 }
