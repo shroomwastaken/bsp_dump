@@ -763,6 +763,18 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::PrimVerts(primverts));
 	println!("parsed primverts lump! ({current_index})");
 
+	//      ====LUMP_PRIMINDICES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut primindices: Vec<lumps::PrimIndex> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		primindices.push(lumps::PrimIndex { index: reader.read_ushort() })
+	}
+	lump_data.push(LumpType::PrimIndices(primindices));
+	println!("parsed primindices lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

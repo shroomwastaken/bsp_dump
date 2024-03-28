@@ -74,7 +74,7 @@ pub enum LumpType {
 	LeafWaterData,
 	Primitives(Vec<Primitive>),
 	PrimVerts(Vec<PrimVert>),
-	PrimIndices,
+	PrimIndices(Vec<PrimIndex>),
 	// this is literally just a zip archive of files lmao
 	PakFile,
 	ClipPortalVerts,
@@ -405,4 +405,9 @@ pub struct Primitive {
 #[derive(Debug, Clone, Copy)]
 pub struct PrimVert {
 	pub pos: Vector3,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PrimIndex {
+	pub index: u16,
 }

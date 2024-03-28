@@ -762,7 +762,7 @@ pub fn dump_file(
 					sprp.leafs.leafs[c as usize],
 				));
 			}
-			
+
 		}
 		to_write.push_str("\tno more data available\n");
 
@@ -800,6 +800,18 @@ pub fn dump_file(
 		let mut counter: u32 = 0;
 		for p in pv {
 			to_write.push_str(&format!("\t[primvert{counter}] {}", p.pos));
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
+
+	// LUMP_PRIMINDICES
+	to_write.push_str("\nLUMP_PRIMINDICES (index 39)\n");
+	if let LumpType::PrimIndices(pi) = &file.lump_data[39] {
+		let mut counter: u32 = 0;
+		for p in pi {
+			to_write.push_str(&format!("\t[primind{counter}] {}\n", p.index));
 			counter += 1;
 		}
 
