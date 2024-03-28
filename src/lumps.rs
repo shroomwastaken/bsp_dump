@@ -73,7 +73,7 @@ pub enum LumpType {
 	GameLump(GameLump),
 	LeafWaterData,
 	Primitives(Vec<Primitive>),
-	PrimVerts,
+	PrimVerts(Vec<PrimVert>),
 	PrimIndices,
 	// this is literally just a zip archive of files lmao
 	PakFile,
@@ -400,4 +400,9 @@ pub struct Primitive {
 	pub num_indices: u16,
 	pub first_vertex: u16,
 	pub num_vertices: u16,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct PrimVert {
+	pub pos: Vector3,
 }

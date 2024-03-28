@@ -794,6 +794,17 @@ pub fn dump_file(
 		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
+	// LUMP_PRIMVERTS
+	to_write.push_str("\nLUMP_PRIMVERTS (index 38)\n");
+	if let LumpType::PrimVerts(pv) = &file.lump_data[38] {
+		let mut counter: u32 = 0;
+		for p in pv {
+			to_write.push_str(&format!("\t[primvert{counter}] {}", p.pos));
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
 
 	// done!
 	println!(
