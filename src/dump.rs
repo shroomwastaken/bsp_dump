@@ -764,10 +764,36 @@ pub fn dump_file(
 			}
 			
 		}
-		to_write.push_str("\tno more data available");
+		to_write.push_str("\tno more data available\n");
 
 		// this lump should never be empty (?)
 	}
+
+	// LUMP_LEAFWATERDATA
+	to_write.push_str("\nLUMP_LEAFWATERDATA (index 36)\n\t structure unknown :(\n");
+
+	// LUMP_PRIMITIVES
+	to_write.push_str("\nLUMP_PRIMITIVES (index 37)\n");
+	if let LumpType::Primitives(prims) = &file.lump_data[37] {
+		let mut counter: u32 = 0;
+		for prim in prims {
+			to_write.push_str(&format!("\t[prim{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\ttype: {} ({})\n\t\tfirst_index: {}\n\t\tnum_indices: {}\n",
+				// TODO: use an enum dude
+				prim.r#type, if prim.r#type == 0 { "PRIM_TRILIST" } else { "PRIM_TRISTRIP" },
+				prim.first_index, prim.num_indices
+			));
+			to_write.push_str(&format!(
+				"\t\tfirst_vertex: {}\n\t\tnum_vertices: {}\n",
+				prim.first_vertex, prim.num_vertices,
+			));
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
+
 
 	// done!
 	println!(

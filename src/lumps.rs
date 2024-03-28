@@ -72,7 +72,7 @@ pub enum LumpType {
 	// lump count, lump data
 	GameLump(GameLump),
 	LeafWaterData,
-	Primitives,
+	Primitives(Vec<Primitive>),
 	PrimVerts,
 	PrimIndices,
 	// this is literally just a zip archive of files lmao
@@ -387,4 +387,17 @@ pub struct VertexNormalIndex {
 #[derive(Debug, Clone, Copy)]
 pub struct DispLightmapSamplePosition {
 	pub unknown: u8, // no clue
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Primitive {
+	// this is an unsigned char in 2013 sdk
+	// but its an unsigned short in portal maps
+	// TODO: check an hl2 map
+	pub r#type: u16,
+
+	pub first_index: u16,
+	pub num_indices: u16,
+	pub first_vertex: u16,
+	pub num_vertices: u16,
 }

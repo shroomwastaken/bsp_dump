@@ -723,6 +723,33 @@ pub fn parse_data_lumps(
 	}
 	lump_data.push(LumpType::GameLump(gamelump));
 	println!("parsed gamelump headers! ({current_index})");
+	// TODO: sprp, dprp and all the other fun stuff
+
+	//      ====LUMP_LEAFWATERDATA====
+	current_index += 1;
+	lump_data.push(LumpType::None);
+	println!("skipped leafwaterdata lump! ({current_index})");
+
+	//      ====LUMP_PRIMITIVES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut prims: Vec<lumps::Primitive> = vec![];
+
+	while reader.index < (info.file_offset + info.length) as usize {
+		prims.push(lumps::Primitive {
+			// TODO: check an hl2 map
+			// cause it could be a u8 apparently
+			r#type: reader.read_ushort(),
+			first_index: reader.read_ushort(),
+			num_indices: reader.read_ushort(),
+			first_vertex: reader.read_ushort(),
+			num_vertices: reader.read_ushort(),
+		});
+	}
+	lump_data.push(LumpType::Primitives(prims));
+	println!("parsed primitives lump! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
