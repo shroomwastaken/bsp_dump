@@ -122,7 +122,7 @@ pub fn dump_file(
 	}
 
 	// LUMP_VISIBILITY
-	to_write.push_str("\nLUMP_VISIBILITY (index 4)\n====NOT FINISHED====\n");
+	to_write.push_str("\nLUMP_VISIBILITY (index 4)\n");
 	if let LumpType::Visibility(vis) = &file.lump_data[4] {
 		let mut counter: u32 = 0;
 		to_write.push_str(&format!(
@@ -131,12 +131,36 @@ pub fn dump_file(
 		));
 		for offsets in &vis.byte_offsets {
 			to_write.push_str(&format!(
-				"\t\t[visofs{counter}] PVS: {}, PAS: {}\n",
+				"\t\t[{counter}] PVS: {}, PAS: {}\n",
 				offsets[0], offsets[1],
 			));
 			counter += 1;
 		}
+		to_write.push_str("\tdata:\n\t\tWARNING this might be incorrect! i haven't found a way to check :(\n");
+		for cl in 0..vis.num_clusters {
+			to_write.push_str(&format!("\t\t[cluster{cl}]\n\t\t\tvisible clusters:\n\t\t\t\t"));
+			let mut cl_str: String = "".to_string();
+			let mut c = 0;
+			for i in 0..vis.cluster_data[0][cl as usize].len() {
+				if c > 25 { cl_str.push_str("\n\t\t\t\t"); c = 0 }
+				if vis.cluster_data[0][cl as usize][i] {
+					cl_str.push_str(&format!("{}, ", i)); c += 1;
+				}
+			}
+			to_write.push_str(&cl_str);
 
+			to_write.push_str(&format!("\n\t\t\taudible clusters:\n\t\t\t\t"));
+			cl_str = "".to_string();
+			c = 0;
+			for i in 0..vis.cluster_data[1][cl as usize].len() {
+				if c > 25 { cl_str.push_str("\n\t\t\t\t"); c = 0 }
+				if vis.cluster_data[1][cl as usize][i] {
+					cl_str.push_str(&format!("{}, ", i)); c += 1;
+				}
+			}
+			to_write.push_str(&cl_str);
+			to_write.push('\n');
+		}
 		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 

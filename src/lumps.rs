@@ -266,6 +266,10 @@ pub struct Vis {
 	// this is of length num_clusters but i can't define it like that :(
 	// so ill have to use a vec
 	pub byte_offsets: Vec<[i32; 2]>,
+
+	// here ill store the decompressed PVS and PAS data
+	// that is the clusters visible and audible from each cluster
+	pub cluster_data: [Vec<Vec<bool>>; 2]
 }
 
 #[derive(Debug, Clone)]

@@ -8,6 +8,7 @@ use crate::{
 		occlusion,
 		physcol_data::{self, ModelHeaders},
 		gamelump,
+		vis::decompress_vis,
 	},
 	flags::{
 		ContentsFlags,
@@ -123,13 +124,28 @@ pub fn parse_data_lumps(
 	let mut vis: lumps::Vis = lumps::Vis {
 		num_clusters: reader.read_int(),
 		byte_offsets: vec![],
+		cluster_data: [vec![], vec![]],
 	};
 	for _ in 0..vis.num_clusters {
+		let pvs_ofs: i32 = reader.read_int();
+		let pas_ofs: i32 = reader.read_int();
+		vis.cluster_data[0].push(
+			decompress_vis(
+				&reader.bytes[info.file_offset as usize + pvs_ofs as usize..],
+				&vis.num_clusters,
+			)
+		);
+		vis.cluster_data[1].push(
+			decompress_vis(
+				&reader.bytes[info.file_offset as usize + pas_ofs as usize..],
+				&vis.num_clusters,
+			)
+		);
 		vis.byte_offsets.push(
-			[reader.read_int(), reader.read_int()]
+			[pvs_ofs, pas_ofs]
 		);
 	}
-	println!("parsed visibility lump! ({current_index})");
+	println!("parsed and decompressed visibility lump! ({current_index})");
 	lump_data.push(LumpType::Visibility(vis));
 
 	//      ====LUMP_NODES====
