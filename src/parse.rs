@@ -791,6 +791,17 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::PrimIndices(primindices));
 	println!("parsed primindices lump! ({current_index})");
 
+	//      ====LUMP_PAKFILE====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let pakfile: lumps::PakFile = lumps::PakFile {
+		bytes: reader.read_bytes(info.length as usize),
+	};
+	lump_data.push(LumpType::PakFile(pakfile));
+	println!("parsed pakfile lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

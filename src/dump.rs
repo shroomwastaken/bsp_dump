@@ -842,6 +842,19 @@ pub fn dump_file(
 		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
+	// LUMP_PAKFILE
+	if let LumpType::PakFile(pakfile) = &file.lump_data[40] {
+		// TODO: should add error handling
+		let mut zip: fs::File = fs::File::create(
+			path.trim_end_matches(".bsp").to_owned() + "-pakfile_dump.zip"
+		).unwrap();
+		let _ = zip.write(pakfile.bytes.as_slice());
+		to_write.push_str(&format!(
+			"\nLUMP_PAKFILE\n\t{} bytes read, dumped to zip file",
+			pakfile.bytes.len(),
+		));
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",
