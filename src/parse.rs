@@ -812,6 +812,22 @@ pub fn parse_data_lumps(
 		clip_portal_verts.push(lumps::ClipPortalVert { vec: reader.read_vector3() });
 	}
 	lump_data.push(LumpType::ClipPortalVerts(clip_portal_verts));
+	println!("parsed clipportalverts lump! ({current_index})");
+
+	//      ====LUMP_CUBEMAPS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut cubemaps: Vec<lumps::CubemapSample> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		cubemaps.push(lumps::CubemapSample {
+			origin: [reader.read_int(), reader.read_int(), reader.read_int()],
+			size: reader.read_int(),
+		});
+	}
+	lump_data.push(LumpType::Cubemaps(cubemaps));
+	println!("parsed cubemaps lump! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {

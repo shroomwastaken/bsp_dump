@@ -865,6 +865,20 @@ pub fn dump_file(
 		}
 	}
 
+	// LUMP_CUBEMAPS
+	to_write.push_str("\nLUMP_CUBEMAPS (index 42)\n");
+	if let LumpType::Cubemaps(cubemaps) = &file.lump_data[42] {
+		let mut counter: u32 = 0;
+		for cubemap in cubemaps {
+			to_write.push_str(&format!(
+				"\t[cubemap{counter}]\n\t\torigin: ({}, {}, {})\n\t\tsize: {} ({} pixels^2)\n",
+				cubemap.origin[0], cubemap.origin[1], cubemap.origin[2],
+				cubemap.size, if cubemap.size == 0 { 32 } else { 2i32.pow((cubemap.size - 1) as u32) }
+			));
+			counter += 1;
+		}
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",
