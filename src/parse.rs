@@ -829,6 +829,33 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::Cubemaps(cubemaps));
 	println!("parsed cubemaps lump! ({current_index})");
 
+	//      ====LUMP_TEXDATASTRINGDATA====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	
+	let mut texdatastringdata: Vec<lumps::TexDataStringData> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		texdatastringdata.push(lumps::TexDataStringData {
+			offset: reader.index - info.file_offset as usize,
+			val: reader.read_string(),
+		})
+	}
+	lump_data.push(LumpType::TexDataStringData(texdatastringdata));
+	println!("parsed texdatastringdata lump! ({current_index})");
+
+	//      ====LUMP_TEXDATASTRINGTABLE====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut texdatastringtable: Vec<lumps::TexDataStringTable> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		texdatastringtable.push(lumps::TexDataStringTable { offset: reader.read_uint() })
+	}
+	lump_data.push(LumpType::TexDataStringTable(texdatastringtable));
+	println!("parsed texdatastringtable lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

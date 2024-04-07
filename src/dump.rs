@@ -879,6 +879,32 @@ pub fn dump_file(
 		}
 	}
 
+	// LUMP_TEXDATASTRINGDATA
+	to_write.push_str("\nLUMP_TEXDATASTRINGDATA (index 43)\n");
+	if let LumpType::TexDataStringData(tdsd) = &file.lump_data[43] {
+		let mut counter: u32 = 0;
+		for t in tdsd {
+			to_write.push_str(&format!(
+				"\t[tdsd{counter}] {}\n", t.val.trim_end_matches('\0'),
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_TEXDATASTRINGTABLE
+	to_write.push_str(
+		"\nLUMP_TEXDATASTRINGTABLE (index 44)\noffsets into the lump above, order is the same\n"
+	);
+	if let LumpType::TexDataStringTable(tdst) = &file.lump_data[44] {
+		let mut counter: u32 = 0;
+		for t in tdst {
+			to_write.push_str(&format!(
+				"\t[tdst{counter}] {}\n", t.offset,
+			));
+			counter += 1;
+		}
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",

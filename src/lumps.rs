@@ -79,8 +79,8 @@ pub enum LumpType {
 	PakFile(PakFile),
 	ClipPortalVerts(Vec<ClipPortalVert>),
 	Cubemaps(Vec<CubemapSample>),
-	TexDataStringData,
-	TexDataStringTable,
+	TexDataStringData(Vec<TexDataStringData>),
+	TexDataStringTable(Vec<TexDataStringTable>),
 	Overlays(Vec<Overlay>),
 	LeafMinDistToWater,
 	FaceMacroTextureInfo,
@@ -424,4 +424,18 @@ pub struct PakFile {
 #[derive(Debug, Clone)]
 pub struct ClipPortalVert {
 	pub vec: Vector3,
+}
+
+#[derive(Debug, Clone)]
+pub struct TexDataStringData {
+	pub val: String,
+	// ill store the offset so that i can use it with
+	// texdatastringtable values
+	pub offset: usize,
+}
+
+#[derive(Debug, Clone)]
+pub struct TexDataStringTable {
+	// type is actually unknown this just makes the most sense
+	pub offset: u32,
 }
