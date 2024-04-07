@@ -802,6 +802,17 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::PakFile(pakfile));
 	println!("parsed pakfile lump! ({current_index})");
 
+	//      ====LUMP_CLIPPORTALVERTS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+	
+	let mut clip_portal_verts: Vec<lumps::ClipPortalVert> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		clip_portal_verts.push(lumps::ClipPortalVert { vec: reader.read_vector3() });
+	}
+	lump_data.push(LumpType::ClipPortalVerts(clip_portal_verts));
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

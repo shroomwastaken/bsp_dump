@@ -77,7 +77,7 @@ pub enum LumpType {
 	PrimIndices(Vec<PrimIndex>),
 	// this is literally just a zip archive of files lmao
 	PakFile(PakFile),
-	ClipPortalVerts,
+	ClipPortalVerts(Vec<ClipPortalVert>),
 	Cubemaps(Vec<CubemapSample>),
 	TexDataStringData,
 	TexDataStringTable,
@@ -419,4 +419,9 @@ pub struct PrimIndex {
 #[derive(Debug, Clone)]
 pub struct PakFile {
 	pub bytes: Vec<u8>
+}
+
+#[derive(Debug, Clone)]
+pub struct ClipPortalVert {
+	pub vec: Vector3,
 }

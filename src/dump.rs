@@ -850,9 +850,19 @@ pub fn dump_file(
 		).unwrap();
 		let _ = zip.write(pakfile.bytes.as_slice());
 		to_write.push_str(&format!(
-			"\nLUMP_PAKFILE\n\t{} bytes read, dumped to zip file",
+			"\nLUMP_PAKFILE\n\t{} bytes read, dumped to zip file\n",
 			pakfile.bytes.len(),
 		));
+	}
+
+	// LUMP_CLIPPORTALVERTS
+	to_write.push_str("\nLUMP_CLIPPORTALVERTS (index 41)\n");
+	if let LumpType::ClipPortalVerts(clipportalverts) = &file.lump_data[41] {
+		let mut counter: u32 = 0;
+		for vert in clipportalverts {
+			to_write.push_str(&format!("\t[clpv{counter}] {}\n", vert.vec));
+			counter += 1;
+		}
 	}
 
 	// done!
