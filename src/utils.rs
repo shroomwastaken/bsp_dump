@@ -7,6 +7,12 @@ pub struct Vector3 {
 	pub z: f32,
 }
 
+impl Vector3 {
+	pub fn new() -> Vector3 {
+		Vector3 { x: 0.0, y: 0.0, z: 0.0 }
+	}
+}
+
 impl fmt::Display for Vector3 {
 	fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
 		write!(f, "({}, {}, {})", self.x, self.y, self.z)
