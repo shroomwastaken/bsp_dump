@@ -165,7 +165,7 @@ pub fn dump_file(
 	}
 
 	// LUMP_NODES
-	to_write.push_str("\nLUMP_VERTEXES (index 5)\n");
+	to_write.push_str("\nLUMP_NODES (index 5)\n");
 	if let LumpType::Nodes(nodes) = &file.lump_data[5]{
 		let mut counter: u32 = 0;
 		for node in nodes {
