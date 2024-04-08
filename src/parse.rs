@@ -856,6 +856,51 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::TexDataStringTable(texdatastringtable));
 	println!("parsed texdatastringtable lump! ({current_index})");
 
+	//      ====LUMP_OVERLAYS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut overlays: Vec<lumps::Overlay> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		let mut overlay: lumps::Overlay = lumps::Overlay {
+			id: reader.read_int(),
+			texinfo: reader.read_short(),
+			face_count_and_render_order: reader.read_ushort(),
+			faces: [0; 64],
+			u: [0.0; 2],
+			v: [0.0; 2],
+			uv_points: [Vector3::new(); 4],
+			origin: Vector3::new(),
+			basis_normal: Vector3::new(),
+		};
+		// i should make a method for reading slices
+		for i in 0..64 { overlay.faces[i] = reader.read_int(); }
+		overlay.u = [reader.read_float(), reader.read_float()];
+		overlay.v = [reader.read_float(), reader.read_float()];
+		overlay.uv_points = [
+			reader.read_vector3(), reader.read_vector3(),
+			reader.read_vector3(), reader.read_vector3(),
+		];
+		overlay.origin = reader.read_vector3();
+		overlay.basis_normal = reader.read_vector3();
+		overlays.push(overlay)
+	}
+	lump_data.push(LumpType::Overlays(overlays));
+	println!("parsed overlays lump! ({current_index})");
+
+	//      ====LUMP_LEAFMINDISTTOWATER====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut dists: Vec<lumps::LeafMinDistToWater> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		dists.push(lumps::LeafMinDistToWater { dist: reader.read_int(), });
+	}
+	lump_data.push(LumpType::LeafMinDistToWater(dists));
+	println!("parsed leafmindisttowater lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

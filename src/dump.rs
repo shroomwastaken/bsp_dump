@@ -905,6 +905,41 @@ pub fn dump_file(
 		}
 	}
 
+	// LUMP_OVAERLAYS
+	to_write.push_str("\nLUMP_OVERLAYS (index 45)\n");
+	if let LumpType::Overlays(overlays) = &file.lump_data[45] {
+		let mut counter: u32 = 0;
+		for overlay in overlays {
+			to_write.push_str(&format!(
+				"\t[overlay{counter}]\n\t\tid: {}\n\t\ttexinfo: {}\n\t\tface_count_and_render_order: {}\n",
+				overlay.id, overlay.texinfo, overlay.face_count_and_render_order,
+			));
+			to_write.push_str(&format!("\t\tfaces: "));
+			for i in 0..64 {
+				if i % 8 == 0 && i != 0 { to_write.push_str("\n\t\t\t"); }
+				to_write.push_str(&format!("{}, ", overlay.faces[i]));
+			}
+			to_write.push_str(&format!(
+				"\n\t\tu: {} {}\n\t\tv: {} {}\n\t\tuv_points: {}, {}\n\t\t\t{}, {}\n\t\torigin: {}\n\t\tbasis_normal: {}\n",
+				overlay.u[0], overlay.u[1], overlay.v[0], overlay.v[1],
+				overlay.uv_points[0], overlay.uv_points[1], overlay.uv_points[2], overlay.uv_points[3],
+				overlay.origin, overlay.basis_normal,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_LWAFMINDISTTOWATER
+	to_write.push_str("\nLUMP_LEAFMINDISTTOWATER (index 46)\n");
+	if let LumpType::LeafMinDistToWater(dists) = &file.lump_data[46] {
+		let mut counter: u32 =0;
+		for dist in dists {
+			to_write.push_str(&format!("\t[lmdttw{counter}] {}\n", dist.dist));
+			counter += 1;
+		}
+	}
+
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",

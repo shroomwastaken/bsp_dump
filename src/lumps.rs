@@ -82,7 +82,7 @@ pub enum LumpType {
 	TexDataStringData(Vec<TexDataStringData>),
 	TexDataStringTable(Vec<TexDataStringTable>),
 	Overlays(Vec<Overlay>),
-	LeafMinDistToWater,
+	LeafMinDistToWater(Vec<LeafMinDistToWater>),
 	FaceMacroTextureInfo,
 	DispTris(Vec<DispTriFlags>),
 	PhysCollideSurface,
@@ -438,4 +438,9 @@ pub struct TexDataStringData {
 pub struct TexDataStringTable {
 	// type is actually unknown this just makes the most sense
 	pub offset: u32,
+}
+
+#[derive(Debug, Clone)]
+pub struct LeafMinDistToWater {
+	pub dist: i32,
 }
