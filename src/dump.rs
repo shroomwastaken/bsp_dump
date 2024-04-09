@@ -932,9 +932,19 @@ pub fn dump_file(
 	// LUMP_LWAFMINDISTTOWATER
 	to_write.push_str("\nLUMP_LEAFMINDISTTOWATER (index 46)\n");
 	if let LumpType::LeafMinDistToWater(dists) = &file.lump_data[46] {
-		let mut counter: u32 =0;
+		let mut counter: u32 = 0;
 		for dist in dists {
 			to_write.push_str(&format!("\t[lmdttw{counter}] {}\n", dist.dist));
+			counter += 1;
+		}
+	}
+
+	// LUMP_FACEMACROTEXTUREINFO
+	to_write.push_str("\nLUMP_FACEMACROTEXTUREINFO (index 47)\nindicies into lump 44 (?)\n");
+	if let LumpType::FaceMacroTextureInfo(inds) = &file.lump_data[47] {
+		let mut counter: u32 = 0;
+		for ind in inds {
+			to_write.push_str(&format!("\t[fmti{counter}] {}\n", ind.index));
 			counter += 1;
 		}
 	}

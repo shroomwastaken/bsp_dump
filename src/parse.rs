@@ -901,6 +901,18 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::LeafMinDistToWater(dists));
 	println!("parsed leafmindisttowater lump! ({current_index})");
 
+	// LUMP_FACEMACROTEXTUREINFO
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut inds: Vec<lumps::FaceMacroTextureInfo> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		inds.push(lumps::FaceMacroTextureInfo { index: reader.read_int(), });
+	}
+	lump_data.push(LumpType::FaceMacroTextureInfo(inds));
+	println!("parsed facemacrotextureinfo lump! ({current_index})");
+
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
 		lump_data.push(LumpType::None);

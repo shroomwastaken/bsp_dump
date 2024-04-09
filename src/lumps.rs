@@ -83,7 +83,7 @@ pub enum LumpType {
 	TexDataStringTable(Vec<TexDataStringTable>),
 	Overlays(Vec<Overlay>),
 	LeafMinDistToWater(Vec<LeafMinDistToWater>),
-	FaceMacroTextureInfo,
+	FaceMacroTextureInfo(Vec<FaceMacroTextureInfo>),
 	DispTris(Vec<DispTriFlags>),
 	PhysCollideSurface,
 	PropBlob,
@@ -443,4 +443,11 @@ pub struct TexDataStringTable {
 #[derive(Debug, Clone)]
 pub struct LeafMinDistToWater {
 	pub dist: i32,
+}
+
+#[derive(Debug, Clone)]
+pub struct FaceMacroTextureInfo {
+	// seemingly indices into lump 44
+	// but then theyre also -1 a lot of the time so idk
+	pub index: i32
 }
