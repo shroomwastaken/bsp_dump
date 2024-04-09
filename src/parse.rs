@@ -1,19 +1,10 @@
 use std::time::Instant;
 use crate::{
-	file_structure::{BSPFile, Header, LumpInfo},
-	lumps::{self, LumpType},
-	reader::Reader,
-	utils::Vector3,
-	specific::{
-		occlusion,
-		physcol_data::{self, ModelHeaders},
-		gamelump,
-		vis::decompress_vis,
-	},
-	flags::{
-		ContentsFlags,
-		SurfaceFlags,
-	}
+	file_structure::{BSPFile, Header, LumpInfo}, flags::{
+		self, ContentsFlags, SurfaceFlags
+	}, lumps::{self, LumpType}, reader::Reader, specific::{
+		gamelump, occlusion, physcol_data::{self, ModelHeaders}, vis::decompress_vis
+	}, utils::Vector3
 };
 
 pub fn parse_file(
@@ -901,7 +892,7 @@ pub fn parse_data_lumps(
 	lump_data.push(LumpType::LeafMinDistToWater(dists));
 	println!("parsed leafmindisttowater lump! ({current_index})");
 
-	// LUMP_FACEMACROTEXTUREINFO
+	//      ====LUMP_FACEMACROTEXTUREINFO====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
@@ -912,6 +903,21 @@ pub fn parse_data_lumps(
 	}
 	lump_data.push(LumpType::FaceMacroTextureInfo(inds));
 	println!("parsed facemacrotextureinfo lump! ({current_index})");
+
+	//      ====LUMP_DISPTRIS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut tris: Vec<flags::DispTriFlags> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		tris.push(flags::DispTriFlags::from_bits_truncate(reader.read_ushort()));
+	}
+	lump_data.push(LumpType::DispTris(tris));
+	println!("parsed disptris lump! ({current_index})");
+
+	//      ====LUMP_PHYSCOLLISESURFACE====
+	println!("skipped physcollide lump! ({current_index})");
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {

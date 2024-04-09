@@ -863,6 +863,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[clpv{counter}] {}\n", vert.vec));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_CUBEMAPS
@@ -877,6 +879,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_TEXDATASTRINGDATA
@@ -889,6 +893,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_TEXDATASTRINGTABLE
@@ -903,6 +909,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_OVAERLAYS
@@ -927,6 +935,8 @@ pub fn dump_file(
 			));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_LWAFMINDISTTOWATER
@@ -937,6 +947,8 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[lmdttw{counter}] {}\n", dist.dist));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
 	// LUMP_FACEMACROTEXTUREINFO
@@ -947,8 +959,28 @@ pub fn dump_file(
 			to_write.push_str(&format!("\t[fmti{counter}] {}\n", ind.index));
 			counter += 1;
 		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
+	
+	
+	// LUMP_DISPTRIS
+	to_write.push_str("\nLUMP_DISPTRIS (index 48)\n");
+	if let LumpType::DispTris(tris) = &file.lump_data[48] {
+		let mut counter: u32 = 0;
+		for f in tris {
+			to_write.push_str(&format!("\t[disptri{counter}] {}\n", bitflags_to_string(f.iter_names())));
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
+	// LUMP_PHYSCOLLIDESURFACE
+	to_write.push_str(&format!(
+		"\nLUMP_PHYSCOLLIDESURFACE (index 48)\n\t{} bytes, structure unknown\n",
+		&file.header.lumps[48].length
+	));
 
 	// done!
 	println!(
