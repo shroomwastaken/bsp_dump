@@ -321,8 +321,9 @@ pub fn dump_file(
 		for leaf in leafs {
 			to_write.push_str(&format!("\t[leaf{counter}]\n"));
 			to_write.push_str(&format!(
-				"\t\tcontents: {}\n\t\tcluster: {}\n\t\tarea_flags: {}\n",
-				bitflags_to_string(leaf.contents.iter_names()), leaf.cluster, leaf.area_flags,
+				"\t\tcontents: {}\n\t\tcluster: {}\n\t\tarea: {}\n\t\tflags: {}\n",
+				bitflags_to_string(leaf.contents.iter_names()), leaf.cluster,
+				leaf.area_flags & (1 << 9 - 1), leaf.area_flags >> 9,
 			));
 			to_write.push_str(&format!(
 				"\t\tmins: {:?}\n\t\tmaxs: {:?}\n\t\tfirst_leaf_face, num_leaf_faces: {}, {}\n",
