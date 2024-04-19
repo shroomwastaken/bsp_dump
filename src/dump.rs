@@ -14,7 +14,10 @@ use crate::{
 		gamelump,
 	},
 	VERSION,
-	utils::bitflags_to_string,
+	utils::{
+		bitflags_to_string,
+		int_to_gsrc_planetype,
+	},
 };
 
 pub fn dump(
@@ -1037,6 +1040,61 @@ pub fn dump_goldsrc(
 			l_info.file_offset,
 			l_info.length,
 		));
+	}
+
+	// LUMP_ENTITIES
+	to_write.push_str("\nLUMP_ENTITIES (index 0)\n");
+	if let GoldSrcLumpType::Entities(ents) = &ld[0] {
+		let mut counter: u32 = 0;
+		for ent in ents {
+			to_write.push_str(&format!("\t[ent{counter}]\n"));
+			for pair in ent {
+				to_write.push_str(&format!("\t\t{}: {}\n", pair.0, pair.1));
+			}
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
+
+	// LUMP_PLANES
+	to_write.push_str("\nLUMP_PLANES (index 1)\n");
+	if let GoldSrcLumpType::Planes(planes) = &ld[1] {
+		let mut counter: u32 = 0;
+		for plane in planes {
+			to_write.push_str(&format!("\t[pln{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tnormal: {}\n\t\tdist: {}\n\t\ttype: {}\n",
+				plane.normal, plane.dist, int_to_gsrc_planetype(&plane.r#type),
+			));
+			counter += 1;
+		}
+
+		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
+	}
+
+	// LUMP_TEXTURES
+	to_write.push_str("\nLUMP_TEXTURES (index 2)\n");
+	if let GoldSrcLumpType::Textures(textures) = &ld[2] {
+		to_write.push_str(&format!(
+			"\tmip_textures: {}\n\tmiptex offsets:\n",
+			textures.num_textures
+		));
+		let mut counter: u32 = 0;
+		for offset in &textures.offsets {
+			to_write.push_str(&format!("\t\t[miptexofs{counter}] {offset}\n"));
+			counter += 1;
+		}
+		counter = 0;
+		to_write.push_str("\tmiptexs:\n");
+		for miptex in &textures.miptexs {
+			to_write.push_str(&format!("\t\t[miptex{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\t\tname: {}\n\t\t\twidth, height: {}, {}\n\t\t\toffsets: {:?}\n",
+				miptex.name.split('\0').next().unwrap(), miptex.width, miptex.height, miptex.offsets,
+			));
+			counter += 1;
+		}
 	}
 
 	// done!

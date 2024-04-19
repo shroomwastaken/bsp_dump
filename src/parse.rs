@@ -951,5 +951,55 @@ pub fn parse_goldsrc_data_lumps(
 	lump_info: &[LumpInfo; 64],
 	lump_data: &mut Vec<GoldSrcLumpType>,
 ) {
+	let mut current_index: usize = 0;
+	let mut info: &LumpInfo = &lump_info[current_index];
 
+	//      ====LUMP_ENTITIES====
+	reader.index = info.file_offset as usize;
+	let ent_string: String = reader.read_string();
+	lump_data.push(GoldSrcLumpType::Entities(parse_entity_string(ent_string)));
+	println!("parsed entities lump! ({current_index})");
+
+	//      ====LUMP_PLANES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut planes: Vec<goldsrc::Plane> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		planes.push(goldsrc::Plane {
+			normal: reader.read_vector3(),
+			dist: reader.read_float(),
+			r#type: reader.read_int(),
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Planes(planes));
+	println!("parsed planes lump! ({current_index})");
+
+	//      ====LUMP_TEXTURES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut textures: goldsrc::Textures = goldsrc::Textures {
+		num_textures: reader.read_uint(),
+		offsets: vec![],
+		miptexs: vec![],
+	};
+	for _ in 0..textures.num_textures { textures.offsets.push(reader.read_int()); }
+	for i in 0..textures.num_textures {
+		// this might cause issues lmao
+		reader.index = (info.file_offset + textures.offsets[i as usize] as u32) as usize;
+		textures.miptexs.push(goldsrc::Miptex {
+			name: reader.read_sized_string(16),
+			width: reader.read_uint(),
+			height: reader.read_uint(),
+			offsets: [
+				reader.read_uint(), reader.read_uint(),
+				reader.read_uint(), reader.read_uint(),
+			],
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Textures(textures));
+	println!("parsed textures lump! ({current_index})");
 }

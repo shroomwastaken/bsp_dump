@@ -73,3 +73,15 @@ pub fn parse_entity_string(
 
 	entities
 }
+
+pub fn int_to_gsrc_planetype(val: &i32) -> &str {
+	match *val {
+		0 => "PLANE_X",
+		1 => "PLANE_Y",
+		2 => "PLANE_Z",
+		3 => "PLANE_ANYX",
+		4 => "PLANE_ANYY",
+		5 => "PLANE_ANYZ",
+		_ => "error / undefined type"
+	}
+}

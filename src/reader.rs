@@ -31,6 +31,13 @@ impl Reader {
 		String::from_utf8(self.read_bytes(next_null + 1)).unwrap()
 	}
 
+	pub fn read_sized_string(
+		&mut self,
+		amount: usize,
+	) -> String {
+		String::from_utf8(self.read_bytes(amount)).unwrap()
+	}
+
 	pub fn read_int(
 		&mut self,
 	) -> i32 {
