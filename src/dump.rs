@@ -1097,6 +1097,176 @@ pub fn dump_goldsrc(
 		}
 	}
 
+	// LUMP_VERTICES
+	to_write.push_str("\nLUMP_VERTICES (index 3)\n");
+	if let GoldSrcLumpType::Vertices(verts) = &ld[3] {
+		let mut counter: u32 = 0;
+		for vert in verts {
+			to_write.push_str(&format!("\t[vert{counter}] {vert}\n"));
+			counter += 1;
+		}
+	}
+
+	// LUMP_VISIBILITY
+	to_write.push_str("\nLUMP_VISIBILITY (index 4)\n");
+	if header.lumps[4].length == 0 {
+		to_write.push_str("\tlump empty\n");
+	} else {
+		to_write.push_str(&format!(
+			"\nstructure unknown, {} bytes",
+			header.lumps[4].length,
+		))
+	}
+
+	// LUMP_NODES
+	to_write.push_str("\nLUMP_NODES (index 5)\n");
+	if let GoldSrcLumpType::Nodes(nodes) = &ld[5] {
+		let mut counter: u32 = 0;
+		for node in nodes {
+			to_write.push_str(&format!("\t[node{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tplane_idx: {}\n\t\tchildren_idxs: {}{}, {}{}\n\t\tmins: {:?}\n\t\tmaxs: {:?}\n",
+				node.plane_idx, node.children_idxs[0],
+				if node.children_idxs[0] < 0 {
+					format_args!(" ([leaf{}])", !node.children_idxs[0]).to_string()
+				} else { "".to_string() },
+				node.children_idxs[1],
+				if node.children_idxs[1] < 0 {
+					format_args!(" ([leaf{}])", !node.children_idxs[1]).to_string()
+				} else { "".to_string() },
+				node.mins, node.maxs,
+			));
+			to_write.push_str(&format!(
+				"\t\tfirst_face: {}\n\t\tnum_faces: {}\n", node.first_face, node.num_faces,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_TEXINFO
+	to_write.push_str("\nLUMP_TEXINFO (index 6)\n");
+	if let GoldSrcLumpType::TexInfo(texinfos) = &ld[6] {
+		let mut counter: u32 = 0;
+		for texinfo in texinfos {
+			to_write.push_str(&format!("\t[texinfo{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\ts, s_shift: {}, {}\n\t\tt, t_shift: {}, {}\n\t\tmiptex_idx: {}\n\t\tflags: {}\n",
+				texinfo.s, texinfo.s_shift, texinfo.t, texinfo.t_shift, texinfo.miptex_idx, texinfo.flags,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_FACES
+	to_write.push_str("\nLUMP_FACES (index 7)\n");
+	if let GoldSrcLumpType::Faces(faces) = &ld[7] {
+		let mut counter: u32 = 0;
+		for face in faces {
+			to_write.push_str(&format!("\t[face{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tplane_idx: {}\n\t\tplane_side: {}\n\t\tfirst_surfedge_idx: {}\n",
+				face.plane_idx, face.plane_side, face.first_surfedge_idx,
+			));
+			to_write.push_str(&format!(
+				"\t\tnum_surfedges: {}\n\t\ttexinfo_idx: {}\n\t\tstyles: {:?}\n\t\tlightmap_offset: {}\n",
+				face.num_surfedges, face.texinfo_idx, face.styles, face.lightmap_offset,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_LIGHTING
+	to_write.push_str("\nLUMP_LIGHTING (index 8)\n");
+	if let GoldSrcLumpType::Lighting(lightmaps) = &ld[8] {
+		let mut counter: u32 = 0;
+		for light in lightmaps {
+			to_write.push_str(&format!("\t[lightmap{counter}] {:?}\n", light.color));
+			counter += 1;
+		}
+	}
+
+	// LUMP_CLIPNODES
+	to_write.push_str("\nLUMP_CLIPNODES (index 9)\n");
+	if let GoldSrcLumpType::ClipNodes(clipnodes) = &ld[9] {
+		let mut counter: u32 = 0;
+		for clipnode in clipnodes {
+			to_write.push_str(&format!(
+				"\t[clnode{counter}]\n\t\tplane_idx: {}\n\t\tchildren_idxs: {:?}\n",
+				clipnode.plane_idx, clipnode.children_idxs,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_LEAVES
+	to_write.push_str("\nLUMP_LEAVES (index 10)\n");
+	if let GoldSrcLumpType::Leaves(leaves) = &ld[10] {
+		let mut counter: u32 = 0;
+		for leaf in leaves {
+			to_write.push_str(&format!("\t[leaf{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tcontents: {}\n\t\tvis_offset: {}\n\t\tmins, maxs: {:?}, {:?}\n",
+				bitflags_to_string(leaf.contents.iter_names()), leaf.vis_ofs,
+				leaf.mins, leaf.maxs,
+			));
+			to_write.push_str(&format!(
+				"\t\tfirst_marksurface_idx: {}\n\t\tnum_marksurfaces: {}\n\t\tambient_levels: {:?}\n",
+				leaf.first_maksurf_idx, leaf.num_marksurfaces, leaf.ambient_levels,
+			));
+			counter += 1;
+		}
+	}
+
+	// LUMP_MARKSURFACES
+	to_write.push_str("\nLUMP_MARKSURFACES (index 11)\n");
+	if let GoldSrcLumpType::MarkSurfaces(marksurfs) = &ld[11] {
+		let mut counter: u32 = 0;
+		for marksurf in marksurfs {
+			to_write.push_str(&format!("\t[marksurf{counter}] {marksurf}\n"));
+			counter += 1;
+		} 
+	}
+
+	// LUMP_EDGES
+	to_write.push_str("\nLUMP_EDGES (index 12)\n");
+	if let GoldSrcLumpType::Edges(edges) = &ld[12] {
+		let mut counter: u32 = 0;
+		for edge in edges {
+			to_write.push_str(&format!("\t[edge{counter}] {edge:?}\n"));
+			counter += 1;
+		} 
+	}
+
+	// LUMP_SURFEDGES
+	to_write.push_str("\nLUMP_SURFEDGES (index 13)\n");
+	to_write.push_str("positive number: edge referenced from 1st to 2nd vertex (->)\n");
+	to_write.push_str("negative number: edge referenced from 2nd to 1st vertex (<-)\n");
+	if let GoldSrcLumpType::SurfEdges(surfedges) = &ld[13] {
+		let mut counter: u32 = 0;
+		for surfedge in surfedges {
+			to_write.push_str(&format!("\t[surfedge{counter}] {surfedge}\n"));
+			counter += 1;
+		} 
+	}
+
+	// LUMP_MODELS
+	to_write.push_str("\nLUMP_MODELS (index 14)\n");
+	if let GoldSrcLumpType::Models(models) = &ld[14] {
+		let mut counter: u32 = 0;
+		for model in models {
+			to_write.push_str(&format!("\t[model{counter}]\n"));
+			to_write.push_str(&format!(
+				"\t\tmins, maxs: {}, {}\n\t\torigin: {}\n\t\theadnodes_idx: {:?}\n\t\tnum_visleafs: {}\n",
+				model.mins, model.maxs, model.origin, model.headnodes_idx, model.num_visleafs,
+			));
+			to_write.push_str(&format!(
+				"\t\tfirst_face_idx: {}\n\t\tnum_faces: {}\n",
+				model.first_face_idx, model.num_faces,
+			));
+			counter += 1;
+		}
+	}
+
 	// done!
 	println!(
 		"dumping finished! wrote {} bytes",

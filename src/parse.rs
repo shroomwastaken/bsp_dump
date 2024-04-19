@@ -1002,4 +1002,189 @@ pub fn parse_goldsrc_data_lumps(
 	}
 	lump_data.push(GoldSrcLumpType::Textures(textures));
 	println!("parsed textures lump! ({current_index})");
+
+	//      ====LUMP_VERTICES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut vertices: Vec<Vector3> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		vertices.push(reader.read_vector3());
+	}
+	lump_data.push(GoldSrcLumpType::Vertices(vertices));
+	println!("parsed vertices lump! ({current_index})");
+	
+	//      ====LUMP_VISIBILITY====
+	current_index += 1;
+	lump_data.push(GoldSrcLumpType::None);
+	println!("skipped visibility lump! ({current_index})");
+
+	//      ====LUMP_NODES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut nodes: Vec<goldsrc::Node> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		nodes.push(goldsrc::Node {
+			plane_idx: reader.read_uint(),
+			children_idxs: [reader.read_short(), reader.read_short()],
+			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
+			maxs: [reader.read_short(), reader.read_short(), reader.read_short()],
+			first_face: reader.read_ushort(),
+			num_faces: reader.read_ushort(),
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Nodes(nodes));
+	println!("parsed nodes lump! ({current_index})");
+
+	//      ====LUMP_TEXINFO====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut texinfos: Vec<goldsrc::TexInfo> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		texinfos.push(goldsrc::TexInfo {
+			s: reader.read_vector3(),
+			s_shift: reader.read_float(),
+			t: reader.read_vector3(),
+			t_shift: reader.read_float(),
+			miptex_idx: reader.read_uint(),
+			flags: reader.read_uint(),
+		});
+	}
+	lump_data.push(GoldSrcLumpType::TexInfo(texinfos));
+	println!("parsed texinfos lump! ({current_index})");
+
+	//      ====LUMP_FACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut faces: Vec<goldsrc::Face> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		faces.push(goldsrc::Face {
+			plane_idx: reader.read_ushort(),
+			plane_side: reader.read_ushort(),
+			first_surfedge_idx: reader.read_uint(),
+			num_surfedges: reader.read_ushort(),
+			texinfo_idx: reader.read_ushort(),
+			styles: [
+				reader.read_byte(), reader.read_byte(),
+				reader.read_byte(), reader.read_byte()
+			],
+			lightmap_offset: reader.read_int(),
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Faces(faces));
+	println!("parsed faces lump! ({current_index})");
+
+	//      ====LUMP_LIGHTING====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut lightmaps: Vec<goldsrc::Lightmap> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		lightmaps.push(goldsrc::Lightmap {
+			color: [reader.read_byte(), reader.read_byte(), reader.read_byte()]
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Lighting(lightmaps));
+	println!("parsed lightmaps lump! ({current_index})");
+
+	//      ====LUMP_CLIPNODES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut clipnodes: Vec<goldsrc::ClipNodes> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		clipnodes.push(goldsrc::ClipNodes {
+			plane_idx: reader.read_int(),
+			children_idxs: [reader.read_short(), reader.read_short()],
+		});
+	}
+	lump_data.push(GoldSrcLumpType::ClipNodes(clipnodes));
+	println!("parsed clipnodes lump! ({current_index})");
+
+	//      ====LUMP_LEAVES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut leaves: Vec<goldsrc::Leaf> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		leaves.push(goldsrc::Leaf {
+			contents: flags::GoldSrcContentsFlags::from_bits_truncate(reader.read_int()),
+			vis_ofs: reader.read_int(),
+			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
+			maxs: [reader.read_short(), reader.read_short(), reader.read_short()],
+			first_maksurf_idx: reader.read_ushort(),
+			num_marksurfaces: reader.read_ushort(),
+			ambient_levels: [reader.read_byte(), reader.read_byte(), reader.read_byte(), reader.read_byte()],
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Leaves(leaves));
+	println!("parsed leaves lump! ({current_index})");
+
+	//      ====LUMP_MARKSURFACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut marksurfaces: Vec<u16> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		marksurfaces.push(reader.read_ushort());
+	}
+	lump_data.push(GoldSrcLumpType::MarkSurfaces(marksurfaces));
+	println!("parsed marksurfaces lump! ({current_index})");
+
+	//      ====LUMP_EDGES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut edges: Vec<[u16; 2]> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		edges.push([reader.read_ushort(), reader.read_ushort()]);
+	}
+	lump_data.push(GoldSrcLumpType::Edges(edges));
+	println!("parsed edges lump! ({current_index})");
+
+	//      ====LUMP_SURFEDGES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut surfedges: Vec<i32> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		surfedges.push(reader.read_int());
+	}
+	lump_data.push(GoldSrcLumpType::SurfEdges(surfedges));
+	println!("parsed surfedges lump! ({current_index})");
+
+	//      ====LUMP_MODELS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut models: Vec<goldsrc::Model> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		models.push(goldsrc::Model {
+			mins: reader.read_vector3(), maxs: reader.read_vector3(),
+			origin: reader.read_vector3(),
+			headnodes_idx: [
+				reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int(),
+			],
+			num_visleafs: reader.read_int(),
+			first_face_idx: reader.read_int(),
+			num_faces: reader.read_int(),
+		});
+	}
+	lump_data.push(GoldSrcLumpType::Models(models));
+	println!("parsed models lump! ({current_index})");
 }

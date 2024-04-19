@@ -70,3 +70,24 @@ bitflags! {
 		const FlagSurfprop2 = 0x10;
 	}
 }
+
+bitflags! {
+	#[derive(Debug, Clone, Copy)]
+	pub struct GoldSrcContentsFlags : i32 {
+		const Empty = -1;
+		const Solid = -2;
+		const Water = -3;
+		const Slime = -4;
+		const Lava = -5;
+		const Sky = -6;
+		const Origin = -7;
+		const Clip = -8;
+		const Current0 = -9;
+		const Current90 = -10;
+		const Current180 = -11;
+		const Current270 = -12;
+		const CurrentUp = -13;
+		const CurrentDown = -14;
+		const Translucent = -15;
+	}
+}
