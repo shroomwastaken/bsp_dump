@@ -20,7 +20,7 @@ use crate:: {
 
 #[derive(Debug, Clone)]
 #[allow(unused)]
-pub enum LumpType {
+pub enum VBSPLumpType {
 	None,
 	Entities(Vec<Vec<(String, String)>>),
 	Planes(Vec<Plane>),

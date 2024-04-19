@@ -1,6 +1,6 @@
 use crate::utils::Vector3;
 use crate::specific::cdisp;
-use crate::lumps;
+use crate::lumps::vbsp;
 
 pub struct Reader {
 	pub bytes: Vec<u8>,
@@ -113,8 +113,8 @@ impl Reader {
 
 	pub fn read_colorrgbexp32(
 		&mut self,
-	) -> lumps::ColorRGBExp32 {
-		lumps::ColorRGBExp32 {
+	) -> vbsp::ColorRGBExp32 {
+		vbsp::ColorRGBExp32 {
 			r: self.read_byte(),
 			g: self.read_byte(),
 			b: self.read_byte(),
@@ -124,8 +124,8 @@ impl Reader {
 
 	pub fn read_compressed_light_cube(
 		&mut self,
-	) -> lumps::CompressedLightCube {
-		lumps::CompressedLightCube {
+	) -> vbsp::CompressedLightCube {
+		vbsp::CompressedLightCube {
 			color: [
 				self.read_colorrgbexp32(), self.read_colorrgbexp32(),
 				self.read_colorrgbexp32(), self.read_colorrgbexp32(),

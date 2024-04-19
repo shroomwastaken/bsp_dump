@@ -12,6 +12,10 @@ use reader::Reader;
 
 const VERSION: &str = "v0.0.1";
 
+const VBSP_MAGIC: i32 = 0x50534256;
+const IBSP_MAGIC: i32 = 0x50534249;
+const GOLDSRC_MAGIC: i32 = 0x0000001e;
+
 fn main() {
     let args: Vec<String> = env::args()
 	.collect();
@@ -25,5 +29,5 @@ fn main() {
 	let mut reader: Reader = Reader::new(file);
 	let file = parse::parse_file(&mut reader);
 
-	dump::dump_file(args[1].clone(), file)
+	dump::dump(args[1].clone(), file)
 }

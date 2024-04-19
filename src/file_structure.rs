@@ -1,31 +1,44 @@
-use crate::lumps::LumpType;
+use crate::lumps::lumptype::Lumps;
+
+#[derive(Debug, Clone, Copy)]
+pub enum BSPVersion {
+	None,
+	VBSP, GoldSrc, // TODO: Quake 1 and 2
+}
 
 #[derive(Debug, Clone)]
 pub struct BSPFile {
 	pub header: Header,
-	pub lump_data: Vec<LumpType>,
+	pub lump_data: Lumps,
 }
 
 impl BSPFile {
-	pub fn new() -> BSPFile {
+	pub fn new(header: Header) -> BSPFile {
 		BSPFile {
-			header: Header::new(),
-			lump_data: vec![],
+			header: header,
+			lump_data: match header.bspver {
+				BSPVersion::VBSP => Lumps::VBSP(vec![]),
+				BSPVersion::GoldSrc => Lumps::GoldSrc(vec![]),
+				BSPVersion::None => { panic!("no") }
+			},
 		}
 	}
 }
 
 #[derive(Debug, Clone, Copy)]
 pub struct Header {
-	pub ident: i32, // "VBSP" little-endian: 0x50534256
-	pub version: i32, // file version
-	pub lumps: [LumpInfo; 64], // lump info array
-	pub map_revision: i32, // map version number
+	pub bspver: BSPVersion, // store what engine this is
+
+	pub ident: i32, // magic number
+	pub version: i32, // file version (VBSP ONLY)
+	pub lumps: [LumpInfo; 64], // lump info array (64 for VBSP, 15 for GoldSrc)
+	pub map_revision: i32, // map version number (VBSP ONLY)
 }
 
 impl Header {
 	pub fn new() -> Header {
 		Header {
+			bspver: BSPVersion::None,
 			ident: 0,
 			version: 0,
 			lumps: [LumpInfo::new(); 64],
@@ -35,9 +48,13 @@ impl Header {
 }
 
 #[derive(Debug, Clone, Copy)]
+// these differ between vesions
+// i'll keep all fields here to not deal with enums again
 pub struct LumpInfo {
 	pub file_offset: u32, // offset into file (bytes)
 	pub length: u32, // size of lump (bytes)
+
+	// VBSP ONLY
 	pub version: u32, // lump format version (usually 0)
 	pub ident: [u8; 4], // lump ident code (usually [0, 0, 0, 0])
 

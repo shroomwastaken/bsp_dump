@@ -1,19 +1,32 @@
 use std::time::Instant;
 use crate::{
-	file_structure::{BSPFile, Header, LumpInfo}, flags::{
-		self, ContentsFlags, SurfaceFlags
-	}, lumps::{self, LumpType}, reader::Reader, specific::{
+	file_structure::{BSPFile, BSPVersion, Header, LumpInfo}, 
+	flags::{self, ContentsFlags, SurfaceFlags},
+	lumps::{
+		vbsp::{self, VBSPLumpType},
+		goldsrc::{self, GoldSrcLumpType},
+		lumptype::Lumps
+	},
+	reader::Reader,
+	specific::{
 		gamelump, occlusion, physcol_data::{self, ModelHeaders}, vis::decompress_vis
-	}, utils::Vector3
+	},
+	utils::Vector3,
+	VBSP_MAGIC, IBSP_MAGIC, GOLDSRC_MAGIC
 };
 
 pub fn parse_file(
 	reader: &mut Reader,
 ) -> BSPFile {
-	let mut file: BSPFile = BSPFile::new();
 	let start: Instant = Instant::now();
-	parse_header(reader, &mut file.header);
-	parse_data_lumps(reader, &file.header.lumps, &mut file.lump_data);
+	let mut header: Header = Header::new();
+	parse_header(reader, &mut header);
+	let mut file: BSPFile = BSPFile::new(header);
+	if let Lumps::VBSP(ld) = &mut file.lump_data {
+		parse_vbsp_data_lumps(reader, &file.header.lumps, ld);
+	} else if let Lumps::GoldSrc(ld) = &mut file.lump_data {
+		parse_goldsrc_data_lumps(reader, &file.header.lumps, ld);
+	}
 	println!("\nparsed file in {:?}!\n", Instant::now().duration_since(start));
 	file
 }
@@ -24,32 +37,39 @@ pub fn parse_header(
 ) {
 	header.ident = reader.read_int();
 
-	// if ident isn't "VBSP"
-	if header.ident != 0x50534256 {
+	if header.ident == VBSP_MAGIC {
+		header.bspver = BSPVersion::VBSP;
+		header.version = reader.read_int();
+	
+		// read lump info
+		for i in 0..64 {
+			header.lumps[i].file_offset = reader.read_uint();
+			header.lumps[i].length = reader.read_uint();
+			header.lumps[i].version = reader.read_uint();
+			header.lumps[i].ident = reader.read_bytes(4).try_into().unwrap();
+			header.lumps[i].index = i as u8;
+		}
+	
+		header.map_revision = reader.read_int();
+	} else if header.ident == GOLDSRC_MAGIC {
+		header.bspver = BSPVersion::GoldSrc;
+		for i in 0..15 {
+			header.lumps[i].file_offset = reader.read_uint();
+			header.lumps[i].length = reader.read_uint();
+			header.lumps[i].index = i as u8;
+		}
+	} else {
 		println!("invalid file header! exiting...");
 		std::process::exit(0);
 	}
 
-	header.version = reader.read_int();
-
-	// read lump info
-	for i in 0..64 {
-		header.lumps[i].file_offset = reader.read_uint();
-		header.lumps[i].length = reader.read_uint();
-		header.lumps[i].version = reader.read_uint();
-		header.lumps[i].ident = reader.read_bytes(4).try_into().unwrap();
-		header.lumps[i].index = i as u8;
-	}
-
-	header.map_revision = reader.read_int();
-
 	println!("parsed header!");
 }
 
-pub fn parse_data_lumps(
+pub fn parse_vbsp_data_lumps(
 	reader: &mut Reader,
 	lump_info: &[LumpInfo; 64],
-	lump_data: &mut Vec<LumpType>,
+	lump_data: &mut Vec<VBSPLumpType>,
 ) {
 	let mut current_index: usize = 0;
 	let mut info: &LumpInfo = &lump_info[current_index];
@@ -57,7 +77,7 @@ pub fn parse_data_lumps(
 	//      ====LUMP_ENTITIES====
 	reader.index = info.file_offset as usize;
 	let ent_string: String = reader.read_string();
-	lump_data.push(LumpType::Entities(parse_entity_string(ent_string)));
+	lump_data.push(VBSPLumpType::Entities(parse_entity_string(ent_string)));
 	println!("parsed entities lump! ({current_index})");
 
 	//      ====LUMP_PLANES====
@@ -65,25 +85,25 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut planes: Vec<lumps::Plane> = vec![];
+	let mut planes: Vec<vbsp::Plane> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		planes.push(lumps::Plane {
+		planes.push(vbsp::Plane {
 			normal: reader.read_vector3(),
 			dist: reader.read_float(),
 			r#type: reader.read_int(),
 		});
 	}
 	println!("parsed planes lump! ({current_index})");
-	lump_data.push(LumpType::Planes(planes));
+	lump_data.push(VBSPLumpType::Planes(planes));
 
 	//      ====LUMP_TEXDATA====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut texdata: Vec<lumps::TexData> = vec![];
+	let mut texdata: Vec<vbsp::TexData> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		texdata.push(lumps::TexData {
+		texdata.push(vbsp::TexData {
 			reflectivity: reader.read_vector3(),
 			name_string_table_id: reader.read_int(),
 			width: reader.read_int(),
@@ -93,7 +113,7 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed texdata lump! ({current_index})");
-	lump_data.push(LumpType::TexData(texdata));
+	lump_data.push(VBSPLumpType::TexData(texdata));
 
 	//      ====LUMP_VERTEXES====
 	current_index += 1;
@@ -105,14 +125,14 @@ pub fn parse_data_lumps(
 		vertexes.push(reader.read_vector3());
 	}
 	println!("parsed vertexes lump! ({current_index})");
-	lump_data.push(LumpType::Vertexes(vertexes));
+	lump_data.push(VBSPLumpType::Vertexes(vertexes));
 
 	//      ====LUMP_VISIBILITY====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut vis: lumps::Vis = lumps::Vis {
+	let mut vis: vbsp::Vis = vbsp::Vis {
 		num_clusters: reader.read_int(),
 		byte_offsets: vec![],
 		cluster_data: [vec![], vec![]],
@@ -137,16 +157,16 @@ pub fn parse_data_lumps(
 		);
 	}
 	println!("parsed and decompressed visibility lump! ({current_index})");
-	lump_data.push(LumpType::Visibility(vis));
+	lump_data.push(VBSPLumpType::Visibility(vis));
 
 	//      ====LUMP_NODES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut nodes: Vec<lumps::Node> = vec![];
+	let mut nodes: Vec<vbsp::Node> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		nodes.push(lumps::Node {
+		nodes.push(vbsp::Node {
 			plane_num: reader.read_int(),
 			children: [reader.read_int(), reader.read_int()],
 			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
@@ -158,16 +178,16 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed nodes lump! ({current_index})");
-	lump_data.push(LumpType::Nodes(nodes));
+	lump_data.push(VBSPLumpType::Nodes(nodes));
 
 	//      ====LUMP_TEXINFOS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut texinfos: Vec<lumps::TexInfo> = vec![];
+	let mut texinfos: Vec<vbsp::TexInfo> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		texinfos.push(lumps::TexInfo {
+		texinfos.push(vbsp::TexInfo {
 			texture_vecs: [
 				[
 					reader.read_float(), reader.read_float(),
@@ -193,16 +213,16 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed texinfo lump! ({current_index})");
-	lump_data.push(LumpType::TexInfo(texinfos));
+	lump_data.push(VBSPLumpType::TexInfo(texinfos));
 
 	//      ====LUMP_FACES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut faces: Vec<lumps::Face> = vec![];
+	let mut faces: Vec<vbsp::Face> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		faces.push(lumps::Face {
+		faces.push(vbsp::Face {
 			plane_num: reader.read_ushort(),
 			side: reader.read_byte(),
 			on_node: reader.read_byte(),
@@ -223,19 +243,19 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed faces lump! ({current_index})");
-	lump_data.push(LumpType::Faces(faces));
+	lump_data.push(VBSPLumpType::Faces(faces));
 
 	//      ====LUMP_LIGHTING====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut lightings: Vec<lumps::ColorRGBExp32> = vec![];
+	let mut lightings: Vec<vbsp::ColorRGBExp32> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		lightings.push(reader.read_colorrgbexp32());
 	}
 	println!("parsed lighting lump! ({current_index})");
-	lump_data.push(LumpType::Lighting(lightings));
+	lump_data.push(VBSPLumpType::Lighting(lightings));
 
 	//      ====LUMP_OCCLUSION====
 	current_index += 1;
@@ -243,7 +263,7 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	// this lump isnt an array :0
-	let mut occluder: lumps::Occluder = lumps::Occluder {
+	let mut occluder: vbsp::Occluder = vbsp::Occluder {
 		count: reader.read_int(),
 		data: vec![],
 		poly_data_count: 0,
@@ -275,16 +295,16 @@ pub fn parse_data_lumps(
 	}
 
 	println!("parsed occlusion lump! ({current_index})");
-	lump_data.push(LumpType::Occlusion(occluder));
+	lump_data.push(VBSPLumpType::Occlusion(occluder));
 
 	//      ====LUMP_LEAFS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut leafs: Vec<lumps::Leaf> = vec![];
+	let mut leafs: Vec<vbsp::Leaf> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		leafs.push(lumps::Leaf {
+		leafs.push(vbsp::Leaf {
 			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 			cluster: reader.read_short(),
 			area_flags: reader.read_short(),
@@ -303,33 +323,33 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed leafs lump! ({current_index})");
-	lump_data.push(LumpType::Leafs(leafs));
+	lump_data.push(VBSPLumpType::Leafs(leafs));
 
 	//      ====LUMP_FACEIDS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut faceids: Vec<lumps::FaceID> = vec![];
+	let mut faceids: Vec<vbsp::FaceID> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		faceids.push(lumps::FaceID { id: reader.read_ushort() });
+		faceids.push(vbsp::FaceID { id: reader.read_ushort() });
 	}
 	println!("parsed faceids lump! ({current_index})");
-	lump_data.push(LumpType::FaceIDs(faceids));
+	lump_data.push(VBSPLumpType::FaceIDs(faceids));
 
 	//      ====LUMP_EDGES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut edges: Vec<lumps::Edge> = vec![];
+	let mut edges: Vec<vbsp::Edge> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		edges.push(lumps::Edge {
+		edges.push(vbsp::Edge {
 			pair: [reader.read_ushort(), reader.read_ushort()],
 		});
 	}
 	println!("parsed edges lump! ({current_index})");
-	lump_data.push(LumpType::Edges(edges));
+	lump_data.push(VBSPLumpType::Edges(edges));
 
 	//      ====LUMP_SURFEDGES====
 	current_index += 1;
@@ -341,16 +361,16 @@ pub fn parse_data_lumps(
 		surfedges.push(reader.read_int());
 	}
 	println!("parsed surfedges lump! ({current_index})");
-	lump_data.push(LumpType::SurfEdges(surfedges));
+	lump_data.push(VBSPLumpType::SurfEdges(surfedges));
 
 	//      ====LUMP_MODELS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut models: Vec<lumps::Model> = vec![];
+	let mut models: Vec<vbsp::Model> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		models.push(lumps::Model {
+		models.push(vbsp::Model {
 			mins: reader.read_vector3(),
 			maxs: reader.read_vector3(),
 			origin: reader.read_vector3(),
@@ -360,7 +380,7 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed models lump! ({current_index})");
-	lump_data.push(LumpType::Models(models));
+	lump_data.push(VBSPLumpType::Models(models));
 
 	// TODO: figure out the structure
 	//      ====LUMP_WORLDLIGHTS====
@@ -369,7 +389,7 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	reader.skip(info.length as usize);
-	lump_data.push(LumpType::None);
+	lump_data.push(VBSPLumpType::None);
 	println!("skipped worldlights lump! ({current_index})");
 
 	// TODO: figure out the structure
@@ -379,7 +399,7 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	reader.skip(info.length as usize);
-	lump_data.push(LumpType::None);
+	lump_data.push(VBSPLumpType::None);
 	println!("skipped leaffaces lump! ({current_index})");
 
 	// TODO: figure out the structure
@@ -389,7 +409,7 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	reader.skip(info.length as usize);
-	lump_data.push(LumpType::None);
+	lump_data.push(VBSPLumpType::None);
 	println!("skipped leafbrushes lump! ({current_index})");
 
 	//      ====LUMP_BRUSHES====
@@ -397,25 +417,25 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut brushes: Vec<lumps::Brush> = vec![];
+	let mut brushes: Vec<vbsp::Brush> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		brushes.push(lumps::Brush {
+		brushes.push(vbsp::Brush {
 			first_side: reader.read_int(),
 			num_sides: reader.read_int(),
 			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 		});
 	}
 	println!("parsed brushes lump! ({current_index})");
-	lump_data.push(LumpType::Brushes(brushes));
+	lump_data.push(VBSPLumpType::Brushes(brushes));
 
 	//      ====LUMP_BRUSHSIDES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut brushsides: Vec<lumps::BrushSide> = vec![];
+	let mut brushsides: Vec<vbsp::BrushSide> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		brushsides.push(lumps::BrushSide {
+		brushsides.push(vbsp::BrushSide {
 			plane_num: reader.read_ushort(),
 			texinfo: reader.read_short(),
 			dispinfo: reader.read_short(),
@@ -423,31 +443,31 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed brushsides lump! ({current_index})");
-	lump_data.push(LumpType::BrushSides(brushsides));
+	lump_data.push(VBSPLumpType::BrushSides(brushsides));
 
 	//      ====LUMP_AREAS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut areas: Vec<lumps::Area> = vec![];
+	let mut areas: Vec<vbsp::Area> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		areas.push(lumps::Area {
+		areas.push(vbsp::Area {
 			num_area_portals: reader.read_int(),
 			first_area_portal: reader.read_int(),
 		});
 	}
 	println!("parsed areas lump! ({current_index})");
-	lump_data.push(LumpType::Areas(areas));
+	lump_data.push(VBSPLumpType::Areas(areas));
 
 	//      ====LUMP_AREAPORTALS====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut areaportals: Vec<lumps::AreaPortal> = vec![];
+	let mut areaportals: Vec<vbsp::AreaPortal> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		areaportals.push(lumps::AreaPortal {
+		areaportals.push(vbsp::AreaPortal {
 			portal_key: reader.read_ushort(),
 			other_area: reader.read_ushort(),
 			first_clip_portal_vert: reader.read_ushort(),
@@ -456,17 +476,17 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed areaportals lump! ({current_index})");
-	lump_data.push(LumpType::AreaPortals(areaportals));
+	lump_data.push(VBSPLumpType::AreaPortals(areaportals));
 
 	// TODO: the next four lumps are unsused in source 2007/2009
 	// i need to detect source version somehow but for now im just
 	// trying to parse portal bsp so ill just skip these 4
 
 	//      ====LUMP_UNUSED22/LUMP_UNUSED23/LUMP_UNUSED24/LUMP_UNUSED25====
-	lump_data.push(LumpType::Unused22);
-	lump_data.push(LumpType::Unused23);
-	lump_data.push(LumpType::Unused24);
-	lump_data.push(LumpType::Unused25);
+	lump_data.push(VBSPLumpType::Unused22);
+	lump_data.push(VBSPLumpType::Unused23);
+	lump_data.push(VBSPLumpType::Unused24);
+	lump_data.push(VBSPLumpType::Unused25);
 	current_index += 4;
 	println!("skipped lumps 22-25, they are unused");
 
@@ -474,9 +494,9 @@ pub fn parse_data_lumps(
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	let mut dispinfos: Vec<lumps::DispInfo> = vec![];
+	let mut dispinfos: Vec<vbsp::DispInfo> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		dispinfos.push(lumps::DispInfo {
+		dispinfos.push(vbsp::DispInfo {
 			start_position: reader.read_vector3(),
 			disp_vert_start: reader.read_int(),
 			disp_tri_start: reader.read_int(),
@@ -504,7 +524,7 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed dispinfo lump! ({current_index})");
-	lump_data.push(LumpType::DispInfo(dispinfos));
+	lump_data.push(VBSPLumpType::DispInfo(dispinfos));
 
 	//      ====LUMP_ORIGINALFACES====
 	current_index += 1;
@@ -512,9 +532,9 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	// literally the same exact structure as the faces lump
-	let mut orig_faces: Vec<lumps::Face> = vec![];
+	let mut orig_faces: Vec<vbsp::Face> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		orig_faces.push(lumps::Face {
+		orig_faces.push(vbsp::Face {
 			plane_num: reader.read_ushort(),
 			side: reader.read_byte(),
 			on_node: reader.read_byte(),
@@ -535,20 +555,20 @@ pub fn parse_data_lumps(
 		});
 	}
 	println!("parsed faces lump! ({current_index})");
-	lump_data.push(LumpType::OriginalFaces(orig_faces));
+	lump_data.push(VBSPLumpType::OriginalFaces(orig_faces));
 
 	//      ====LUMP_PHYDISP====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut phydisps: Vec<lumps::PhyDisp> = vec![];
+	let mut phydisps: Vec<vbsp::PhyDisp> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		phydisps.push(lumps::PhyDisp {
+		phydisps.push(vbsp::PhyDisp {
 			num_disps: reader.read_ushort(),
 		});
 	}
-	lump_data.push(LumpType::PhyDisp(phydisps));
+	lump_data.push(VBSPLumpType::PhyDisp(phydisps));
 	println!("parsed phydisp lump! ({current_index})");
 
 	//      ====LUMP_PHYSCOLLIDE====
@@ -556,9 +576,9 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut physmodels: Vec<lumps::PhysModel> = vec![];
+	let mut physmodels: Vec<vbsp::PhysModel> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		let mut model: lumps::PhysModel = lumps::PhysModel {
+		let mut model: vbsp::PhysModel = vbsp::PhysModel {
 			model_index: reader.read_int(),
 			data_size: reader.read_int(),
 			keydata_size: reader.read_int(),
@@ -607,7 +627,7 @@ pub fn parse_data_lumps(
 		model.key_data = physcol_data::parse_keydata_string(reader.read_string());
 		physmodels.push(model);
 	}
-	lump_data.push(LumpType::PhysCollide(physmodels));
+	lump_data.push(VBSPLumpType::PhysCollide(physmodels));
 	println!("parsed physcollide lump! ({current_index})");
 
 	//      ====LUMP_VERTNORMALS====
@@ -615,13 +635,13 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut vertnormals: Vec<lumps::VertexNormal> = vec![];
+	let mut vertnormals: Vec<vbsp::VertexNormal> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		vertnormals.push(lumps::VertexNormal {
+		vertnormals.push(vbsp::VertexNormal {
 			normal: reader.read_vector3()
 		});
 	}
-	lump_data.push(LumpType::VertNormal(vertnormals));
+	lump_data.push(VBSPLumpType::VertNormal(vertnormals));
 	println!("parsed vertnormals lump! ({current_index})");
 
 	//      ====LUMP_VERTNORMALINDICES====
@@ -629,13 +649,13 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut vertnormalindices: Vec<lumps::VertexNormalIndex> = vec![];
+	let mut vertnormalindices: Vec<vbsp::VertexNormalIndex> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		vertnormalindices.push(lumps::VertexNormalIndex {
+		vertnormalindices.push(vbsp::VertexNormalIndex {
 			index: reader.read_ushort(),
 		});
 	}
-	lump_data.push(LumpType::VertNormalIndices(vertnormalindices));
+	lump_data.push(VBSPLumpType::VertNormalIndices(vertnormalindices));
 	println!("parsed vertnormals lump! ({current_index})");
 
 	//      ====LUMP_DISPLIGHTMAPALPHAS====
@@ -644,7 +664,7 @@ pub fn parse_data_lumps(
 	reader.index = info.file_offset as usize;
 
 	// the structure for this one is unknown
-	lump_data.push(LumpType::None);
+	lump_data.push(VBSPLumpType::None);
 	println!("skipped displightmapalphas lump! ({current_index})");
 
 	//      ====LUMP_DISPVERTS====
@@ -652,15 +672,15 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut dispverts: Vec<lumps::DispVert> = vec![];
+	let mut dispverts: Vec<vbsp::DispVert> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		dispverts.push(lumps::DispVert {
+		dispverts.push(vbsp::DispVert {
 			vec: reader.read_vector3(),
 			dist: reader.read_float(),
 			alpha: reader.read_float(),
 		});
 	}
-	lump_data.push(LumpType::DispVerts(dispverts));
+	lump_data.push(VBSPLumpType::DispVerts(dispverts));
 	println!("parsed dispverts lump! ({current_index})");
 
 	//      ====LUMP_DISP_LIGHTMAP_SAMPLE_POSITIONS====
@@ -668,11 +688,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut dlsp: Vec<lumps::DispLightmapSamplePosition> = vec![];
+	let mut dlsp: Vec<vbsp::DispLightmapSamplePosition> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		dlsp.push(lumps::DispLightmapSamplePosition { unknown: reader.read_byte() });
+		dlsp.push(vbsp::DispLightmapSamplePosition { unknown: reader.read_byte() });
 	}
-	lump_data.push(LumpType::DispLightmapSamplePositions(dlsp));
+	lump_data.push(VBSPLumpType::DispLightmapSamplePositions(dlsp));
 	println!("parsed displightmapsamplepositions lump! ({current_index})");
 
 	//      ====LUMP_GAME_LUMP====
@@ -682,7 +702,7 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut gamelump: lumps::GameLump = lumps::GameLump {
+	let mut gamelump: vbsp::GameLump = vbsp::GameLump {
 		header: gamelump::GameLumpHeader {
 			lump_count: reader.read_int(),
 			game_lump_info: vec![],
@@ -728,13 +748,13 @@ pub fn parse_data_lumps(
 			}
 		));
 	}
-	lump_data.push(LumpType::GameLump(gamelump));
+	lump_data.push(VBSPLumpType::GameLump(gamelump));
 	println!("parsed gamelump headers! ({current_index})");
 	// TODO: sprp, dprp and all the other fun stuff
 
 	//      ====LUMP_LEAFWATERDATA====
 	current_index += 1;
-	lump_data.push(LumpType::None);
+	lump_data.push(VBSPLumpType::None);
 	println!("skipped leafwaterdata lump! ({current_index})");
 
 	//      ====LUMP_PRIMITIVES====
@@ -742,10 +762,10 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut prims: Vec<lumps::Primitive> = vec![];
+	let mut prims: Vec<vbsp::Primitive> = vec![];
 
 	while reader.index < (info.file_offset + info.length) as usize {
-		prims.push(lumps::Primitive {
+		prims.push(vbsp::Primitive {
 			// TODO: check an hl2 map
 			// cause it could be a u8 apparently
 			r#type: reader.read_ushort(),
@@ -755,7 +775,7 @@ pub fn parse_data_lumps(
 			num_vertices: reader.read_ushort(),
 		});
 	}
-	lump_data.push(LumpType::Primitives(prims));
+	lump_data.push(VBSPLumpType::Primitives(prims));
 	println!("parsed primitives lump! ({current_index})");
 
 	//      ====LUMP_PRIMVERTS====
@@ -763,11 +783,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut primverts: Vec<lumps::PrimVert> = vec![];
+	let mut primverts: Vec<vbsp::PrimVert> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		primverts.push(lumps::PrimVert { pos: reader.read_vector3() });
+		primverts.push(vbsp::PrimVert { pos: reader.read_vector3() });
 	}
-	lump_data.push(LumpType::PrimVerts(primverts));
+	lump_data.push(VBSPLumpType::PrimVerts(primverts));
 	println!("parsed primverts lump! ({current_index})");
 
 	//      ====LUMP_PRIMINDICES====
@@ -775,11 +795,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut primindices: Vec<lumps::PrimIndex> = vec![];
+	let mut primindices: Vec<vbsp::PrimIndex> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		primindices.push(lumps::PrimIndex { index: reader.read_ushort() })
+		primindices.push(vbsp::PrimIndex { index: reader.read_ushort() })
 	}
-	lump_data.push(LumpType::PrimIndices(primindices));
+	lump_data.push(VBSPLumpType::PrimIndices(primindices));
 	println!("parsed primindices lump! ({current_index})");
 
 	//      ====LUMP_PAKFILE====
@@ -787,10 +807,10 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let pakfile: lumps::PakFile = lumps::PakFile {
+	let pakfile: vbsp::PakFile = vbsp::PakFile {
 		bytes: reader.read_bytes(info.length as usize),
 	};
-	lump_data.push(LumpType::PakFile(pakfile));
+	lump_data.push(VBSPLumpType::PakFile(pakfile));
 	println!("parsed pakfile lump! ({current_index})");
 
 	//      ====LUMP_CLIPPORTALVERTS====
@@ -798,11 +818,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 	
-	let mut clip_portal_verts: Vec<lumps::ClipPortalVert> = vec![];
+	let mut clip_portal_verts: Vec<vbsp::ClipPortalVert> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		clip_portal_verts.push(lumps::ClipPortalVert { vec: reader.read_vector3() });
+		clip_portal_verts.push(vbsp::ClipPortalVert { vec: reader.read_vector3() });
 	}
-	lump_data.push(LumpType::ClipPortalVerts(clip_portal_verts));
+	lump_data.push(VBSPLumpType::ClipPortalVerts(clip_portal_verts));
 	println!("parsed clipportalverts lump! ({current_index})");
 
 	//      ====LUMP_CUBEMAPS====
@@ -810,14 +830,14 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut cubemaps: Vec<lumps::CubemapSample> = vec![];
+	let mut cubemaps: Vec<vbsp::CubemapSample> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		cubemaps.push(lumps::CubemapSample {
+		cubemaps.push(vbsp::CubemapSample {
 			origin: [reader.read_int(), reader.read_int(), reader.read_int()],
 			size: reader.read_int(),
 		});
 	}
-	lump_data.push(LumpType::Cubemaps(cubemaps));
+	lump_data.push(VBSPLumpType::Cubemaps(cubemaps));
 	println!("parsed cubemaps lump! ({current_index})");
 
 	//      ====LUMP_TEXDATASTRINGDATA====
@@ -825,14 +845,14 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 	
-	let mut texdatastringdata: Vec<lumps::TexDataStringData> = vec![];
+	let mut texdatastringdata: Vec<vbsp::TexDataStringData> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		texdatastringdata.push(lumps::TexDataStringData {
+		texdatastringdata.push(vbsp::TexDataStringData {
 			offset: reader.index - info.file_offset as usize,
 			val: reader.read_string(),
 		})
 	}
-	lump_data.push(LumpType::TexDataStringData(texdatastringdata));
+	lump_data.push(VBSPLumpType::TexDataStringData(texdatastringdata));
 	println!("parsed texdatastringdata lump! ({current_index})");
 
 	//      ====LUMP_TEXDATASTRINGTABLE====
@@ -840,11 +860,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut texdatastringtable: Vec<lumps::TexDataStringTable> = vec![];
+	let mut texdatastringtable: Vec<vbsp::TexDataStringTable> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		texdatastringtable.push(lumps::TexDataStringTable { offset: reader.read_uint() })
+		texdatastringtable.push(vbsp::TexDataStringTable { offset: reader.read_uint() })
 	}
-	lump_data.push(LumpType::TexDataStringTable(texdatastringtable));
+	lump_data.push(VBSPLumpType::TexDataStringTable(texdatastringtable));
 	println!("parsed texdatastringtable lump! ({current_index})");
 
 	//      ====LUMP_OVERLAYS====
@@ -852,9 +872,9 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut overlays: Vec<lumps::Overlay> = vec![];
+	let mut overlays: Vec<vbsp::Overlay> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		let mut overlay: lumps::Overlay = lumps::Overlay {
+		let mut overlay: vbsp::Overlay = vbsp::Overlay {
 			id: reader.read_int(),
 			texinfo: reader.read_short(),
 			face_count_and_render_order: reader.read_ushort(),
@@ -877,7 +897,7 @@ pub fn parse_data_lumps(
 		overlay.basis_normal = reader.read_vector3();
 		overlays.push(overlay)
 	}
-	lump_data.push(LumpType::Overlays(overlays));
+	lump_data.push(VBSPLumpType::Overlays(overlays));
 	println!("parsed overlays lump! ({current_index})");
 
 	//      ====LUMP_LEAFMINDISTTOWATER====
@@ -885,11 +905,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut dists: Vec<lumps::LeafMinDistToWater> = vec![];
+	let mut dists: Vec<vbsp::LeafMinDistToWater> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		dists.push(lumps::LeafMinDistToWater { dist: reader.read_int(), });
+		dists.push(vbsp::LeafMinDistToWater { dist: reader.read_int(), });
 	}
-	lump_data.push(LumpType::LeafMinDistToWater(dists));
+	lump_data.push(VBSPLumpType::LeafMinDistToWater(dists));
 	println!("parsed leafmindisttowater lump! ({current_index})");
 
 	//      ====LUMP_FACEMACROTEXTUREINFO====
@@ -897,11 +917,11 @@ pub fn parse_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut inds: Vec<lumps::FaceMacroTextureInfo> = vec![];
+	let mut inds: Vec<vbsp::FaceMacroTextureInfo> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		inds.push(lumps::FaceMacroTextureInfo { index: reader.read_int(), });
+		inds.push(vbsp::FaceMacroTextureInfo { index: reader.read_int(), });
 	}
-	lump_data.push(LumpType::FaceMacroTextureInfo(inds));
+	lump_data.push(VBSPLumpType::FaceMacroTextureInfo(inds));
 	println!("parsed facemacrotextureinfo lump! ({current_index})");
 
 	//      ====LUMP_DISPTRIS====
@@ -913,7 +933,7 @@ pub fn parse_data_lumps(
 	while reader.index < (info.file_offset + info.length) as usize {
 		tris.push(flags::DispTriFlags::from_bits_truncate(reader.read_ushort()));
 	}
-	lump_data.push(LumpType::DispTris(tris));
+	lump_data.push(VBSPLumpType::DispTris(tris));
 	println!("parsed disptris lump! ({current_index})");
 
 	//      ====LUMP_PHYSCOLLISESURFACE====
@@ -921,7 +941,7 @@ pub fn parse_data_lumps(
 
 	// skip ones i havent done yet
 	for i in current_index + 1..64 {
-		lump_data.push(LumpType::None);
+		lump_data.push(VBSPLumpType::None);
 		println!("skipped lump with index {}!", i);
 	}
 }
@@ -962,4 +982,12 @@ pub fn parse_entity_string(
 	}
 
 	entities
+}
+
+pub fn parse_goldsrc_data_lumps(
+	reader: &mut Reader,
+	lump_info: &[LumpInfo; 64],
+	lump_data: &mut Vec<GoldSrcLumpType>,
+) {
+
 }
