@@ -11,7 +11,7 @@ use crate::{
 	specific::{
 		gamelump, occlusion, physcol_data::{self, ModelHeaders}, vis::decompress_vis
 	},
-	utils::Vector3,
+	utils::{Vector3, parse_entity_string},
 	VBSP_MAGIC, IBSP_MAGIC, GOLDSRC_MAGIC
 };
 
@@ -944,44 +944,6 @@ pub fn parse_vbsp_data_lumps(
 		lump_data.push(VBSPLumpType::None);
 		println!("skipped lump with index {}!", i);
 	}
-}
-
-// very very bad string parsing code
-// it works so its fine
-pub fn parse_entity_string(
-	ent_string: String,
-) -> Vec<Vec<(String, String)>> {
-	let mut entities: Vec<Vec<(String, String)>> = vec![];
-	let mut clean_strings: Vec<String> = vec![];
-
-	for s in ent_string.split("}\n") {
-		clean_strings.push(s.replace("{", ""));
-	}
-
-	let mut split_attrs: Vec<Vec<String>> = vec![];
-	for s in clean_strings {
-		split_attrs.push(
-			s.split("\n")
-			.map(|s| { s.to_owned() })
-			.collect()
-		);
-	}
-
-	for string in split_attrs {
-		if string == vec![""] { continue; }
-		let mut ent: Vec<(String, String)> = vec![];
-		for attrs in string {
-			if attrs == "" || attrs == "\0" { continue; }
-			let splitted: Vec<String> = attrs.split(" ")
-			.map(|s| { s.trim_matches('\"').to_owned() })
-			.collect();
-
-			ent.push((splitted[0].clone(), splitted[1].clone()));
-		}
-		entities.push(ent);
-	}
-
-	entities
 }
 
 pub fn parse_goldsrc_data_lumps(

@@ -35,3 +35,41 @@ pub fn bitflags_to_string<B: bitflags::Flags>(names: bitflags::iter::IterNames<B
 
     return flag_str;
 }
+
+// very very bad string parsing code
+// it works so its fine
+pub fn parse_entity_string(
+	ent_string: String,
+) -> Vec<Vec<(String, String)>> {
+	let mut entities: Vec<Vec<(String, String)>> = vec![];
+	let mut clean_strings: Vec<String> = vec![];
+
+	for s in ent_string.split("}\n") {
+		clean_strings.push(s.replace("{", ""));
+	}
+
+	let mut split_attrs: Vec<Vec<String>> = vec![];
+	for s in clean_strings {
+		split_attrs.push(
+			s.split("\n")
+			.map(|s| { s.to_owned() })
+			.collect()
+		);
+	}
+
+	for string in split_attrs {
+		if string == vec![""] { continue; }
+		let mut ent: Vec<(String, String)> = vec![];
+		for attrs in string {
+			if attrs == "" || attrs == "\0" { continue; }
+			let splitted: Vec<String> = attrs.split(" ")
+			.map(|s| { s.trim_matches('\"').to_owned() })
+			.collect();
+
+			ent.push((splitted[0].clone(), splitted[1].clone()));
+		}
+		entities.push(ent);
+	}
+
+	entities
+}
