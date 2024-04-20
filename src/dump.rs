@@ -1113,7 +1113,7 @@ pub fn dump_goldsrc(
 		to_write.push_str("\tlump empty\n");
 	} else {
 		to_write.push_str(&format!(
-			"\nstructure unknown, {} bytes",
+			"\tstructure unknown, {} bytes\n",
 			header.lumps[4].length,
 		))
 	}
