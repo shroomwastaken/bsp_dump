@@ -3,7 +3,8 @@ use crate::lumps::lumptype::Lumps;
 #[derive(Debug, Clone, Copy)]
 pub enum BSPVersion {
 	None,
-	VBSP, GoldSrc, // TODO: Quake 1 and 2
+	VBSP, GoldSrc,
+	Quake, // TODO: Quake 2
 }
 
 #[derive(Debug, Clone)]
@@ -19,6 +20,7 @@ impl BSPFile {
 			lump_data: match header.bspver {
 				BSPVersion::VBSP => Lumps::VBSP(vec![]),
 				BSPVersion::GoldSrc => Lumps::GoldSrc(vec![]),
+				BSPVersion::Quake => Lumps::Quake(vec![]),
 				BSPVersion::None => { panic!("no") }
 			},
 		}
@@ -31,7 +33,7 @@ pub struct Header {
 
 	pub ident: i32, // magic number
 	pub version: i32, // file version (VBSP ONLY)
-	pub lumps: [LumpInfo; 64], // lump info array (64 for VBSP, 15 for GoldSrc)
+	pub lumps: [LumpInfo; 64], // lump info array (64 for VBSP, 15 for GoldSrc and Quake)
 	pub map_revision: i32, // map version number (VBSP ONLY)
 }
 

@@ -7,7 +7,12 @@ use std::{
 };
 use crate::{
 	file_structure,
-	lumps::{vbsp::{self, VBSPLumpType}, goldsrc::{self, GoldSrcLumpType}, lumptype::Lumps},
+	lumps::{
+		vbsp::{self, VBSPLumpType},
+		goldsrc::{self, GoldSrcLumpType},
+		quake::{self, QuakeLumpType},
+		lumptype::Lumps,
+	},
 	specific::{
 		occlusion,
 		physcol_data::ModelHeaders,
@@ -34,6 +39,11 @@ pub fn dump(
 			path,
 			file.header,
 			if let Lumps::GoldSrc(ld) = file.lump_data { ld } else { panic!("huh") },
+		),
+		file_structure::BSPVersion::Quake => dump_quake(
+			path,
+			file.header,
+			if let Lumps::Quake(ld) = file.lump_data { ld } else { panic!("huh") }
 		),
 		file_structure::BSPVersion::None => panic!("should have version by now lmao"),
 	}
@@ -986,8 +996,7 @@ pub fn dump_vbsp(
 
 		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
-	
-	
+
 	// LUMP_DISPTRIS
 	to_write.push_str("\nLUMP_DISPTRIS (index 48)\n");
 	if let VBSPLumpType::DispTris(tris) = &ld[48] {
@@ -1224,7 +1233,7 @@ pub fn dump_goldsrc(
 		for marksurf in marksurfs {
 			to_write.push_str(&format!("\t[marksurf{counter}] {marksurf}\n"));
 			counter += 1;
-		} 
+		}
 	}
 
 	// LUMP_EDGES
@@ -1234,7 +1243,7 @@ pub fn dump_goldsrc(
 		for edge in edges {
 			to_write.push_str(&format!("\t[edge{counter}] {edge:?}\n"));
 			counter += 1;
-		} 
+		}
 	}
 
 	// LUMP_SURFEDGES
@@ -1246,7 +1255,7 @@ pub fn dump_goldsrc(
 		for surfedge in surfedges {
 			to_write.push_str(&format!("\t[surfedge{counter}] {surfedge}\n"));
 			counter += 1;
-		} 
+		}
 	}
 
 	// LUMP_MODELS
@@ -1272,4 +1281,12 @@ pub fn dump_goldsrc(
 		"dumping finished! wrote {} bytes",
 		dump_gsrc.write(to_write.as_bytes()).unwrap(),
 	);
+}
+
+pub fn dump_quake(
+	path: String,
+	header: file_structure::Header,
+	ld: Vec<QuakeLumpType>,
+) {
+
 }

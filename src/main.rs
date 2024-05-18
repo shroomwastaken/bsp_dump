@@ -15,6 +15,7 @@ const VERSION: &str = "v0.0.1";
 const VBSP_MAGIC: i32 = 0x50534256;
 const IBSP_MAGIC: i32 = 0x50534249;
 const GOLDSRC_MAGIC: i32 = 0x0000001e;
+const QUAKE_MAGIC: i32 = 0x0000001d;
 
 fn main() {
     let args: Vec<String> = env::args()

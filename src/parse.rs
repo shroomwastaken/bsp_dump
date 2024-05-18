@@ -1,18 +1,10 @@
 use std::time::Instant;
 use crate::{
-	file_structure::{BSPFile, BSPVersion, Header, LumpInfo}, 
-	flags::{self, ContentsFlags, SurfaceFlags},
-	lumps::{
-		vbsp::{self, VBSPLumpType},
-		goldsrc::{self, GoldSrcLumpType},
-		lumptype::Lumps
-	},
-	reader::Reader,
-	specific::{
+	file_structure::{BSPFile, BSPVersion, Header, LumpInfo}, flags::{self, ContentsFlags, SurfaceFlags}, lumps::{
+		goldsrc::{self, GoldSrcLumpType}, lumptype::Lumps, quake::{self, QuakeLumpType}, vbsp::{self, VBSPLumpType}
+	}, reader::Reader, specific::{
 		gamelump, occlusion, physcol_data::{self, ModelHeaders}, vis::decompress_vis
-	},
-	utils::{Vector3, parse_entity_string},
-	VBSP_MAGIC, IBSP_MAGIC, GOLDSRC_MAGIC
+	}, utils::{parse_entity_string, Vector3}, GOLDSRC_MAGIC, IBSP_MAGIC, VBSP_MAGIC, QUAKE_MAGIC
 };
 
 pub fn parse_file(
@@ -26,6 +18,8 @@ pub fn parse_file(
 		parse_vbsp_data_lumps(reader, &file.header.lumps, ld);
 	} else if let Lumps::GoldSrc(ld) = &mut file.lump_data {
 		parse_goldsrc_data_lumps(reader, &file.header.lumps, ld);
+	} else if let Lumps::Quake(ld) = &mut file.lump_data {
+		parse_quake_data_lumps(reader, &file.header.lumps, ld);
 	}
 	println!("\nparsed file in {:?}!\n", Instant::now().duration_since(start));
 	file
@@ -40,7 +34,7 @@ pub fn parse_header(
 	if header.ident == VBSP_MAGIC {
 		header.bspver = BSPVersion::VBSP;
 		header.version = reader.read_int();
-	
+
 		// read lump info
 		for i in 0..64 {
 			header.lumps[i].file_offset = reader.read_uint();
@@ -49,10 +43,17 @@ pub fn parse_header(
 			header.lumps[i].ident = reader.read_bytes(4).try_into().unwrap();
 			header.lumps[i].index = i as u8;
 		}
-	
+
 		header.map_revision = reader.read_int();
 	} else if header.ident == GOLDSRC_MAGIC {
 		header.bspver = BSPVersion::GoldSrc;
+		for i in 0..15 {
+			header.lumps[i].file_offset = reader.read_uint();
+			header.lumps[i].length = reader.read_uint();
+			header.lumps[i].index = i as u8;
+		}
+	} else if header.ident == QUAKE_MAGIC {
+		header.bspver = BSPVersion::Quake;
 		for i in 0..15 {
 			header.lumps[i].file_offset = reader.read_uint();
 			header.lumps[i].length = reader.read_uint();
@@ -817,7 +818,7 @@ pub fn parse_vbsp_data_lumps(
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	
+
 	let mut clip_portal_verts: Vec<vbsp::ClipPortalVert> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		clip_portal_verts.push(vbsp::ClipPortalVert { vec: reader.read_vector3() });
@@ -844,7 +845,7 @@ pub fn parse_vbsp_data_lumps(
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
-	
+
 	let mut texdatastringdata: Vec<vbsp::TexDataStringData> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		texdatastringdata.push(vbsp::TexDataStringData {
@@ -1014,7 +1015,7 @@ pub fn parse_goldsrc_data_lumps(
 	}
 	lump_data.push(GoldSrcLumpType::Vertices(vertices));
 	println!("parsed vertices lump! ({current_index})");
-	
+
 	//      ====LUMP_VISIBILITY====
 	current_index += 1;
 	lump_data.push(GoldSrcLumpType::None);
@@ -1186,5 +1187,254 @@ pub fn parse_goldsrc_data_lumps(
 		});
 	}
 	lump_data.push(GoldSrcLumpType::Models(models));
+	println!("parsed models lump! ({current_index})");
+}
+
+pub fn parse_quake_data_lumps(
+	reader: &mut Reader,
+	lump_info: &[LumpInfo; 64],
+	lump_data: &mut Vec<QuakeLumpType>,
+) {
+	let mut current_index: usize = 0;
+	let mut info: &LumpInfo = &lump_info[current_index];
+
+	//      ====LUMP_ENTITIES====
+	reader.index = info.file_offset as usize;
+	let ent_string: String = reader.read_string();
+	lump_data.push(QuakeLumpType::Entities(parse_entity_string(ent_string)));
+	println!("parsed entities lump! ({current_index})");
+
+	//      ====LUMP_PLANES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut planes: Vec<quake::Plane> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		planes.push(quake::Plane {
+			normal: reader.read_vector3(),
+			dist: reader.read_float(),
+			plane_type: reader.read_int(),
+		});
+	}
+	lump_data.push(QuakeLumpType::Planes(planes));
+	println!("parsed planes lump! ({current_index})");
+
+	//      ====LUMP_TEXTURES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut textures: Vec<quake::Texture> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		let mut texture: quake::Texture = quake::Texture {
+			num_miptex: reader.read_int(),
+			data_offset: [
+				reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int(),
+			],
+			miptexs: vec![],
+		};
+		let stored_idx: usize = reader.index;
+		for ofs in &texture.data_offset {
+			if *ofs != -1 {
+				reader.index = *ofs as usize;
+				texture.miptexs.push(quake::Miptex {
+					name: reader.read_sized_string(16),
+					width: reader.read_uint(),
+					height: reader.read_uint(),
+					offsets: [
+						reader.read_uint(), reader.read_uint(),
+						reader.read_uint(), reader.read_uint(),
+					],
+				});
+			}
+		}
+		textures.push(texture);
+		reader.index = stored_idx;
+	}
+	lump_data.push(QuakeLumpType::Textures(textures));
+	println!("parsed textures lump! ({current_index})");
+
+	//      ====LUMP_VERTEXES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut vertexes: Vec<quake::Vertex> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		vertexes.push(quake::Vertex { point: reader.read_vector3() });
+	}
+	lump_data.push(QuakeLumpType::Vertexes(vertexes));
+	println!("parsed vertexes lump! ({current_index})");
+
+	//      ====LUMP_VISIBILITY====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	lump_data.push(QuakeLumpType::Visibility);
+	println!("skipped visibility lump! ({current_index})");
+
+	//      ====LUMP_NODES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut nodes: Vec<quake::Node> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		nodes.push(quake::Node {
+			planenum: reader.read_int(),
+			children: [reader.read_short(), reader.read_short()],
+			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
+			maxs: [reader.read_short(), reader.read_short(), reader.read_short()],
+		});
+	}
+	lump_data.push(QuakeLumpType::Nodes(nodes));
+	println!("parsed nodes lump! ({current_index})");
+
+	//      ====LUMP_TEXINFO====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut texinfos: Vec<quake::TexInfo> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		texinfos.push(quake::TexInfo {
+			vecs: [
+				[reader.read_int(), reader.read_int()],
+				[reader.read_int(), reader.read_int()],
+				[reader.read_int(), reader.read_int()],
+				[reader.read_int(), reader.read_int()],
+			],
+			miptex: reader.read_int(),
+			flags: reader.read_int(),
+		});
+	}
+	lump_data.push(QuakeLumpType::TexInfo(texinfos));
+	println!("parsed texinfo lump! ({current_index})");
+
+	//      ====LUMP_FACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut faces: Vec<quake::Face> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		faces.push(quake::Face {
+			planenum: reader.read_short(),
+			side: reader.read_short(),
+			first_edge: reader.read_int(),
+			num_edges: reader.read_short(),
+			texinfo: reader.read_short(),
+			styles: [
+				reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int(),
+			],
+			lightofs: reader.read_int(),
+		});
+	}
+	lump_data.push(QuakeLumpType::Faces(faces));
+	println!("parsed faces lump! ({current_index})");
+
+	//      ====LUMP_LIGHTING====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	lump_data.push(QuakeLumpType::Lighting);
+	println!("skipped lighting lump! ({current_index})");
+
+	//      ====LUMP_CLIPNODES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut clipnodes: Vec<quake::ClipNode> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		clipnodes.push(quake::ClipNode {
+			planenum: reader.read_int(),
+			children: [reader.read_short(), reader.read_short()],
+		});
+	}
+	lump_data.push(QuakeLumpType::ClipNodes(clipnodes));
+	println!("parsed clipnodes lump! ({current_index})");
+
+	//      ====LUMP_LEAFS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut leafs: Vec<quake::Leaf> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		leafs.push(quake::Leaf {
+			contents: reader.read_int(),
+			visofs: reader.read_int(),
+			mins: [reader.read_ushort(), reader.read_ushort(), reader.read_ushort()],
+			maxs: [reader.read_ushort(), reader.read_ushort(), reader.read_ushort()],
+			first_marksurface: reader.read_ushort(),
+			num_marksurfaces: reader.read_ushort(),
+			ambient_level: [
+				reader.read_byte(), reader.read_byte(),
+				reader.read_byte(), reader.read_byte()
+			],
+		});
+	}
+	lump_data.push(QuakeLumpType::Leafs(leafs));
+	println!("parsed leafs lump! ({current_index})");
+
+	//      ====LUMP_MARKSURFACES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	lump_data.push(QuakeLumpType::MarkSurfaces);
+	println!("skipped marksurfaces lump! ({current_index})");
+
+	//      ====LUMP_EDGES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut edges: Vec<quake::Edge> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		edges.push(quake::Edge { v: [reader.read_ushort(), reader.read_ushort()] })
+	}
+	lump_data.push(QuakeLumpType::Edges(edges));
+	println!("parsed edges lump! ({current_index})");
+
+	//      ====LUMP_SURFEDGES====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut surfedges: Vec<i32> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		surfedges.push(reader.read_int());
+	}
+	lump_data.push(QuakeLumpType::SurfEdges(surfedges));
+	println!("parsed surfedges lump! ({current_index})");
+
+	//      ====LUMP_MODELS====
+	current_index += 1;
+	info = &lump_info[current_index];
+	reader.index = info.file_offset as usize;
+
+	let mut models: Vec<quake::Model> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		models.push(quake::Model {
+			mins: [reader.read_float(), reader.read_float(), reader.read_float()],
+			maxs: [reader.read_float(), reader.read_float(), reader.read_float()],
+			origin: [reader.read_float(), reader.read_float(), reader.read_float()],
+			headnode: [
+				reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int()
+			],
+			visleafs: reader.read_int(),
+			firstface: reader.read_int(),
+			numfaces: reader.read_int(),
+		});
+	}
+	lump_data.push(QuakeLumpType::Models(models));
 	println!("parsed models lump! ({current_index})");
 }
