@@ -505,7 +505,7 @@ pub fn parse_vbsp_data_lumps(
 			min_tess: reader.read_int(),
 			smoothing_angle: reader.read_float(),
 			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
-			map_face: reader.read_ushort(),
+			map_face: reader.read_uint(),
 			lightmap_alpha_start: reader.read_int(),
 			lightmap_sample_position_start: reader.read_int(),
 			edge_neighbors: [
@@ -517,10 +517,10 @@ pub fn parse_vbsp_data_lumps(
 				reader.read_cdispcornerneighbor(), reader.read_cdispcornerneighbor(),
 			],
 			allowed_verts: [
-				reader.read_uint(), reader.read_uint(), reader.read_uint(),
-				reader.read_uint(), reader.read_uint(), reader.read_uint(),
-				reader.read_uint(), reader.read_uint(), reader.read_uint(),
-				reader.read_uint(),
+				reader.read_int(), reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int(), reader.read_int(),
+				reader.read_int(), reader.read_int(), reader.read_int(),
+				reader.read_int(),
 			],
 		});
 	}

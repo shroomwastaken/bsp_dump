@@ -287,12 +287,14 @@ pub struct DispInfo {
 	pub min_tess: i32,
 	pub smoothing_angle: f32,
 	pub contents: ContentsFlags,
-	pub map_face: u16,
+	// unsigned short in sdk2013 but it seems to be stored as u32 in hl2 maps
+	pub map_face: u32,
 	pub lightmap_alpha_start: i32,
 	pub lightmap_sample_position_start: i32,
 	pub edge_neighbors: [cdisp::CDispNeighbor; 4],
 	pub corner_neighbors: [cdisp::CDispCornerNeighbors; 4],
-	pub allowed_verts: [u32; 10],
+	// unsigned long in sdk2013 but it seems a lot of them are -1 in hl2 maps
+	pub allowed_verts: [i32; 10],
 }
 
 #[derive(Debug, Clone, Copy)]
