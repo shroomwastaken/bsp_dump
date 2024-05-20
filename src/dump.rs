@@ -949,7 +949,7 @@ pub fn dump_vbsp(
 		if counter == 0 { to_write.push_str("\tlump is empty\n"); }
 	}
 
-	// LUMP_OVAERLAYS
+	// LUMP_OVERLAYS
 	to_write.push_str("\nLUMP_OVERLAYS (index 45)\n");
 	if let VBSPLumpType::Overlays(overlays) = &ld[45] {
 		let mut counter: u32 = 0;

@@ -555,7 +555,7 @@ pub fn parse_vbsp_data_lumps(
 			smoothing_groups: reader.read_uint(),
 		});
 	}
-	println!("parsed faces lump! ({current_index})");
+	println!("parsed originalfaces lump! ({current_index})");
 	lump_data.push(VBSPLumpType::OriginalFaces(orig_faces));
 
 	//      ====LUMP_PHYDISP====
@@ -657,7 +657,7 @@ pub fn parse_vbsp_data_lumps(
 		});
 	}
 	lump_data.push(VBSPLumpType::VertNormalIndices(vertnormalindices));
-	println!("parsed vertnormals lump! ({current_index})");
+	println!("parsed vertnormalindices lump! ({current_index})");
 
 	//      ====LUMP_DISPLIGHTMAPALPHAS====
 	current_index += 1;
