@@ -116,17 +116,17 @@ pub fn parse_vbsp_data_lumps(
 	println!("parsed texdata lump! ({current_index})");
 	lump_data.push(VBSPLumpType::TexData(texdata));
 
-	//      ====LUMP_VERTEXES====
+	//      ====LUMP_VERTICES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut vertexes: Vec<Vector3> = vec![];
+	let mut vertices: Vec<Vector3> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		vertexes.push(reader.read_vector3());
+		vertices.push(reader.read_vector3());
 	}
-	println!("parsed vertexes lump! ({current_index})");
-	lump_data.push(VBSPLumpType::Vertexes(vertexes));
+	println!("parsed vertices lump! ({current_index})");
+	lump_data.push(VBSPLumpType::Vertices(vertices));
 
 	//      ====LUMP_VISIBILITY====
 	current_index += 1;
@@ -298,14 +298,14 @@ pub fn parse_vbsp_data_lumps(
 	println!("parsed occlusion lump! ({current_index})");
 	lump_data.push(VBSPLumpType::Occlusion(occluder));
 
-	//      ====LUMP_LEAFS====
+	//      ====LUMP_LEAVES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut leafs: Vec<vbsp::Leaf> = vec![];
+	let mut leaves: Vec<vbsp::Leaf> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		leafs.push(vbsp::Leaf {
+		leaves.push(vbsp::Leaf {
 			contents: ContentsFlags::from_bits_truncate(reader.read_uint()),
 			cluster: reader.read_short(),
 			area_flags: reader.read_short(),
@@ -323,8 +323,8 @@ pub fn parse_vbsp_data_lumps(
 			padding: reader.read_short(),
 		});
 	}
-	println!("parsed leafs lump! ({current_index})");
-	lump_data.push(VBSPLumpType::Leafs(leafs));
+	println!("parsed leaves lump! ({current_index})");
+	lump_data.push(VBSPLumpType::Leaves(leaves));
 
 	//      ====LUMP_FACEIDS====
 	current_index += 1;
@@ -1250,16 +1250,16 @@ pub fn parse_quake_data_lumps(
 	lump_data.push(QuakeLumpType::Textures(texture));
 	println!("parsed textures lump! ({current_index})");
 
-	//      ====LUMP_VERTEXES====
+	//      ====LUMP_VERTICES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut vertexes: Vec<quake::Vertex> = vec![];
+	let mut vertices: Vec<quake::Vertex> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		vertexes.push(quake::Vertex { point: reader.read_vector3() });
+		vertices.push(quake::Vertex { point: reader.read_vector3() });
 	}
-	lump_data.push(QuakeLumpType::Vertexes(vertexes));
+	lump_data.push(QuakeLumpType::Vertices(vertices));
 	println!("parsed vertexes lump! ({current_index})");
 
 	//      ====LUMP_VISIBILITY====
@@ -1356,14 +1356,14 @@ pub fn parse_quake_data_lumps(
 	lump_data.push(QuakeLumpType::ClipNodes(clipnodes));
 	println!("parsed clipnodes lump! ({current_index})");
 
-	//      ====LUMP_LEAFS====
+	//      ====LUMP_LEAVES====
 	current_index += 1;
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut leafs: Vec<quake::Leaf> = vec![];
+	let mut leaves: Vec<quake::Leaf> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
-		leafs.push(quake::Leaf {
+		leaves.push(quake::Leaf {
 			contents: flags::GoldSrcContentsFlags::from_bits_truncate(reader.read_int()),
 			visofs: reader.read_int(),
 			mins: [reader.read_ushort(), reader.read_ushort(), reader.read_ushort()],
@@ -1376,8 +1376,8 @@ pub fn parse_quake_data_lumps(
 			],
 		});
 	}
-	lump_data.push(QuakeLumpType::Leafs(leafs));
-	println!("parsed leafs lump! ({current_index})");
+	lump_data.push(QuakeLumpType::Leaves(leaves));
+	println!("parsed leaves lump! ({current_index})");
 
 	//      ====LUMP_MARKSURFACES====
 	current_index += 1;

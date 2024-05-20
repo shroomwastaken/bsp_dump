@@ -146,7 +146,7 @@ pub fn dump_vbsp(
 
 	// LUMP_VERTEXES
 	to_write.push_str("\nLUMP_VERTEXES (index 3)\n");
-	if let VBSPLumpType::Vertexes(vertexes) = &ld[3] {
+	if let VBSPLumpType::Vertices(vertexes) = &ld[3] {
 		let mut counter: u32 = 0;
 		for vertex in vertexes {
 			to_write.push_str(&format!("\t[vtx{counter}] {vertex}\n"));
@@ -350,10 +350,10 @@ pub fn dump_vbsp(
 	}
 
 	// LUMP_LEAFS
-	to_write.push_str("\nLUMP_LEAFS (index 10)\n");
-	if let VBSPLumpType::Leafs(leafs) = &ld[10] {
+	to_write.push_str("\nLUMP_LEAVES (index 10)\n");
+	if let VBSPLumpType::Leaves(leaves) = &ld[10] {
 		let mut counter: u32 = 0;
-		for leaf in leafs {
+		for leaf in leaves {
 			to_write.push_str(&format!("\t[leaf{counter}]\n"));
 			to_write.push_str(&format!(
 				"\t\tcontents: {}\n\t\tcluster: {}\n\t\tarea: {}\n\t\tflags: {}\n",
@@ -1377,7 +1377,7 @@ pub fn dump_quake(
 
 	// LUMP_VERTICES
 	to_write.push_str("\nLUMP_VERTICES (index 3)\n");
-	if let QuakeLumpType::Vertexes(verts) = &ld[3] {
+	if let QuakeLumpType::Vertices(verts) = &ld[3] {
 		let mut counter: u32 = 0;
 		for vert in verts {
 			to_write.push_str(&format!("\t[vert{counter}] {}\n", vert.point));
@@ -1500,9 +1500,9 @@ pub fn dump_quake(
 	}
 
 	// LUMP_LEAFS
-	to_write.push_str("\nLUMP_LEAFS (index 10)\n");
-	if let QuakeLumpType::Leafs(leafs) = &ld[10] {
-		for (k, leaf) in leafs.iter().enumerate() {
+	to_write.push_str("\nLUMP_LEAVES (index 10)\n");
+	if let QuakeLumpType::Leaves(leaves) = &ld[10] {
+		for (k, leaf) in leaves.iter().enumerate() {
 			to_write.push_str(&format!("\t[leaf{k}]\n"));
 			to_write.push_str(&format!(
 				"\t\tcontents: {}\n\t\tvisofs: {}\n\t\tmins: {:?}\n\t\tmaxs: {:?}\n",
