@@ -1225,35 +1225,29 @@ pub fn parse_quake_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	let mut textures: Vec<quake::Texture> = vec![];
-	while reader.index < (info.file_offset + info.length) as usize {
-		let mut texture: quake::Texture = quake::Texture {
-			num_miptex: reader.read_int(),
-			data_offset: [
-				reader.read_int(), reader.read_int(),
-				reader.read_int(), reader.read_int(),
-			],
-			miptexs: vec![],
-		};
-		let stored_idx: usize = reader.index;
-		for ofs in &texture.data_offset {
-			if *ofs != -1 {
-				reader.index = *ofs as usize;
-				texture.miptexs.push(quake::Miptex {
-					name: reader.read_sized_string(16),
-					width: reader.read_uint(),
-					height: reader.read_uint(),
-					offsets: [
-						reader.read_uint(), reader.read_uint(),
-						reader.read_uint(), reader.read_uint(),
-					],
-				});
-			}
-		}
-		textures.push(texture);
-		reader.index = stored_idx;
+	let mut texture: quake::Texture = quake::Texture {
+		num_miptex: reader.read_int(),
+		data_offset: vec![],
+		miptexs: vec![],
+	};
+	for _ in 0..texture.num_miptex {
+		texture.data_offset.push(reader.read_int());
 	}
-	lump_data.push(QuakeLumpType::Textures(textures));
+	for ofs in &texture.data_offset {
+		if *ofs != -1 {
+			reader.index = info.file_offset as usize + *ofs as usize;
+			texture.miptexs.push(quake::Miptex {
+				name: reader.read_sized_string(16).split('\0').next().unwrap().to_string(),
+				width: reader.read_uint(),
+				height: reader.read_uint(),
+				offsets: [
+					reader.read_uint(), reader.read_uint(),
+					reader.read_uint(), reader.read_uint(),
+				],
+			});
+		}
+	}
+	lump_data.push(QuakeLumpType::Textures(texture));
 	println!("parsed textures lump! ({current_index})");
 
 	//      ====LUMP_VERTEXES====
@@ -1288,6 +1282,8 @@ pub fn parse_quake_data_lumps(
 			children: [reader.read_short(), reader.read_short()],
 			mins: [reader.read_short(), reader.read_short(), reader.read_short()],
 			maxs: [reader.read_short(), reader.read_short(), reader.read_short()],
+			first_face: reader.read_ushort(),
+			num_faces: reader.read_ushort(),
 		});
 	}
 	lump_data.push(QuakeLumpType::Nodes(nodes));
@@ -1302,10 +1298,10 @@ pub fn parse_quake_data_lumps(
 	while reader.index < (info.file_offset + info.length) as usize {
 		texinfos.push(quake::TexInfo {
 			vecs: [
-				[reader.read_int(), reader.read_int()],
-				[reader.read_int(), reader.read_int()],
-				[reader.read_int(), reader.read_int()],
-				[reader.read_int(), reader.read_int()],
+				[reader.read_float(), reader.read_float()],
+				[reader.read_float(), reader.read_float()],
+				[reader.read_float(), reader.read_float()],
+				[reader.read_float(), reader.read_float()],
 			],
 			miptex: reader.read_int(),
 			flags: reader.read_int(),
@@ -1328,8 +1324,8 @@ pub fn parse_quake_data_lumps(
 			num_edges: reader.read_short(),
 			texinfo: reader.read_short(),
 			styles: [
-				reader.read_int(), reader.read_int(),
-				reader.read_int(), reader.read_int(),
+				reader.read_byte(), reader.read_byte(),
+				reader.read_byte(), reader.read_byte(),
 			],
 			lightofs: reader.read_int(),
 		});
@@ -1368,7 +1364,7 @@ pub fn parse_quake_data_lumps(
 	let mut leafs: Vec<quake::Leaf> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		leafs.push(quake::Leaf {
-			contents: reader.read_int(),
+			contents: flags::GoldSrcContentsFlags::from_bits_truncate(reader.read_int()),
 			visofs: reader.read_int(),
 			mins: [reader.read_ushort(), reader.read_ushort(), reader.read_ushort()],
 			maxs: [reader.read_ushort(), reader.read_ushort(), reader.read_ushort()],
@@ -1388,8 +1384,13 @@ pub fn parse_quake_data_lumps(
 	info = &lump_info[current_index];
 	reader.index = info.file_offset as usize;
 
-	lump_data.push(QuakeLumpType::MarkSurfaces);
-	println!("skipped marksurfaces lump! ({current_index})");
+	let mut marksurfs: Vec<u16> = vec![];
+	while reader.index < (info.file_offset + info.length) as usize {
+		marksurfs.push(reader.read_ushort());
+	}
+
+	lump_data.push(QuakeLumpType::MarkSurfaces(marksurfs));
+	println!("parsed marksurfaces lump! ({current_index})");
 
 	//      ====LUMP_EDGES====
 	current_index += 1;
@@ -1423,9 +1424,9 @@ pub fn parse_quake_data_lumps(
 	let mut models: Vec<quake::Model> = vec![];
 	while reader.index < (info.file_offset + info.length) as usize {
 		models.push(quake::Model {
-			mins: [reader.read_float(), reader.read_float(), reader.read_float()],
-			maxs: [reader.read_float(), reader.read_float(), reader.read_float()],
-			origin: [reader.read_float(), reader.read_float(), reader.read_float()],
+			mins: reader.read_vector3(),
+			maxs: reader.read_vector3(),
+			origin: reader.read_vector3(),
 			headnode: [
 				reader.read_int(), reader.read_int(),
 				reader.read_int(), reader.read_int()

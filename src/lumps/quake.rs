@@ -2,13 +2,14 @@
 // https://github.com/id-Software/Quake/blob/master/WinQuake/bspfile.h
 
 use crate::utils::Vector3;
+use crate::flags::GoldSrcContentsFlags; // matches quake 1 flags perfectly
 
 #[derive(Debug, Clone)]
 pub enum QuakeLumpType {
 	None,
 	Entities(Vec<Vec<(String, String)>>),
 	Planes(Vec<Plane>),
-	Textures(Vec<Texture>),
+	Textures(Texture),
 	Vertexes(Vec<Vertex>),
 	Visibility,
 	Nodes(Vec<Node>),
@@ -17,7 +18,7 @@ pub enum QuakeLumpType {
 	Lighting,
 	ClipNodes(Vec<ClipNode>),
 	Leafs(Vec<Leaf>),
-	MarkSurfaces,
+	MarkSurfaces(Vec<u16>),
 	Edges(Vec<Edge>),
 	SurfEdges(Vec<i32>),
 	Models(Vec<Model>),
@@ -34,7 +35,7 @@ pub struct Plane {
 pub struct Texture {
 	pub num_miptex: i32,
 	// length seems to be hardcoded but could also be num_miptex
-	pub data_offset: [i32; 4],
+	pub data_offset: Vec<i32>,
 
 	pub miptexs: Vec<Miptex>, // ill store it
 }
@@ -58,11 +59,13 @@ pub struct Node {
 	pub children: [i16; 2], // negative numbers are -(leaf + 1) as usual
 	pub mins: [i16; 3],
 	pub maxs: [i16; 3],
+	pub first_face: u16,
+	pub num_faces: u16,
 }
 
 #[derive(Debug, Clone)]
 pub struct TexInfo {
-	pub vecs: [[i32; 2]; 4],
+	pub vecs: [[f32; 2]; 4],
 	pub miptex: i32,
 	pub flags: i32, // TODO: define the one flag lmao
 }
@@ -74,7 +77,7 @@ pub struct Face {
 	pub first_edge: i32,
 	pub num_edges: i16,
 	pub texinfo: i16,
-	pub styles: [i32; 4], // TODO: define styles
+	pub styles: [u8; 4], // TODO: define styles
 	pub lightofs: i32,
 }
 
@@ -86,7 +89,7 @@ pub struct ClipNode {
 
 #[derive(Debug, Clone)]
 pub struct Leaf {
-	pub contents: i32,
+	pub contents: GoldSrcContentsFlags,
 	pub visofs: i32, // -1 = no vis info
 	pub mins: [u16; 3],
 	pub maxs: [u16; 3],
@@ -104,9 +107,9 @@ pub struct Edge {
 
 #[derive(Debug, Clone)]
 pub struct Model {
-	pub mins: [f32; 3],
-	pub maxs: [f32; 3],
-	pub origin: [f32; 3],
+	pub mins: Vector3,
+	pub maxs: Vector3,
+	pub origin: Vector3,
 	pub headnode: [i32; 4],
 	pub visleafs: i32, // not including the solid leaf 0
 	pub firstface: i32,

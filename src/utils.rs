@@ -85,3 +85,11 @@ pub fn int_to_gsrc_planetype(val: &i32) -> &str {
 		_ => "error / undefined type"
 	}
 }
+
+pub fn int_to_quake_texflag(val: &i32) -> &str {
+	match *val {
+		0 => "None",
+		1 => "TEX_SPECIAL",
+		_ => "error / undefined flag",
+	}
+}
